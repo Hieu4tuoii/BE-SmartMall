@@ -1,0 +1,52 @@
+spring:
+  config:
+    activate:
+      on-profile: dev
+  devtools:
+    add-properties: true
+  datasource:
+    url: jdbc:mysql://localhost:3306/smartmall
+    username: smartmall2902
+    password: smartmall2902
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: vipnro121@gmail.com
+    password: ${MAIL_PASSWORD:your-app-password-here}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+# OpenAPI configuration
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+openapi:
+  service:
+    api-docs: backend-service
+    server: http://localhost:${server.port}
+    title: Backend service
+    version: 1.0.0
+jwt:
+  expiryMinutes: 5
+  expiryDay: 14
+  secretKey: 5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437
+#  accessKey: TCWX/PoH4ze9qdhTm7YAmwKf0qBrKSnF5fdwfUlLTEA=
+#  refreshKey: YJoOPyEuDpwNqlsFnRrttjBpLsHYVe5T4ekB1IBFM0U=
+fe:
+  domains: http://localhost:3000,http://localhost:8080
+
+file:
+  upload-dir: ./uploads
