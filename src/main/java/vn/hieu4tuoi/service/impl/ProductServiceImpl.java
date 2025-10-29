@@ -299,6 +299,6 @@ public class ProductServiceImpl implements ProductService {
                 .map(imageMapper::entityToResponse)
                 .toList();
         productForUpdateResponse.setImageList(imageResponses);
-
+        return productForUpdateResponse;
     }
 }

@@ -3,6 +3,7 @@ package vn.hieu4tuoi.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import vn.hieu4tuoi.common.ProductItemStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -13,14 +14,14 @@ import java.time.LocalDate;
 @Table(name = "product_item")
 public class ProductItem extends AbstractEntity {
 
-    @Column(name = "imei_or_serial", length = 100)
+    @Column(name = "imei_or_serial", length = 100, unique = true)
     private String imeiOrSerial;
 
     @Column(name = "import_price", precision = 15, scale = 2)
     private BigDecimal importPrice;
 
     @Column(name = "status", length = 50)
-    private String status;
+    private ProductItemStatus status;
 
     @Column(name = "warranty_activation_date")
     private LocalDate warrantyActivationDate;
@@ -33,4 +34,11 @@ public class ProductItem extends AbstractEntity {
 
     @Column(name = "import_order_id")
     private String importOrderId;
+
+    @PrePersist
+    public void prePersist() {
+        if (status == null) {
+            status = ProductItemStatus.IN_STOCK;
+        }
+    }
 }

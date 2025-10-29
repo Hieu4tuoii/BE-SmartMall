@@ -285,7 +285,7 @@ public class GlobalException {
         errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
         errorResponse.setStatus(INTERNAL_SERVER_ERROR.value());
         errorResponse.setError(INTERNAL_SERVER_ERROR.getReasonPhrase());
-        errorResponse.setMessage(e.getMessage());
+        errorResponse.setMessage("Có lỗi xảy ra trong quá trình xử lý. Vui lòng thử lại sau.");
 
         return errorResponse;
     }

@@ -22,17 +22,6 @@ public class ProductForUpdateResponse {
     private String brandId;
     private String categoryId;
     private List<ImageResponse> imageList;
-    // private Integer warrantyPeriod;
-    // private String description;
-    // private String specifications;
-    // private String status;
-    // private String brandId;
-    // private String categoryId;
-    // private Double averageRating;
-    // private Integer totalRating;
-    // private Long totalSold;
-    // private String imageUrl; //lấy 1 ảnh chính của sản phẩm
-    // private Long totalStock;
     private LocalDateTime createdAt;
     private LocalDateTime modifiedAt;
 }
