@@ -144,7 +144,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public PageResponse<List<ProductResponse>> findAllInAdmin(int page, int size, String sort, String keyword) {
         // Xử lý sắp xếp
-        Sort.Order order = new Sort.Order(Sort.Direction.ASC, "id"); // Mặc định sắp xếp theo id tăng dần
+        Sort.Order order = new Sort.Order(Sort.Direction.DESC, "modifiedAt"); // Mặc định sắp xếp theo modifiedAt desc
         if (StringUtils.hasLength(sort)) {
             Pattern pattern = Pattern.compile("(\\w+?)(:)(.*)");
             Matcher matcher = pattern.matcher(sort);

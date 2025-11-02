@@ -12,4 +12,5 @@ public class ImportOrder extends AbstractEntity {
 
     @Column(name = "supplier_id")
     private String supplierId;
+    private Long totalImportPrice;
 }

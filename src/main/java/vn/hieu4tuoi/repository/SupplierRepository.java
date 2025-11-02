@@ -27,4 +27,6 @@ public interface SupplierRepository extends JpaRepository<SupplierEntity, String
            "LOWER(s.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "s.phoneNumber LIKE CONCAT('%', :keyword, '%'))")
     List<SupplierEntity> searchByKeyword(@Param("keyword") String keyword);
+
+    List<SupplierEntity> findByIdInAndIsDeletedFalse(List<String> ids);
 }

@@ -51,7 +51,7 @@ public class UserServiceImpl implements UserService {
     
     private PageResponse<List<UserResponse>> searchUserByRole(Authorities role, String keyword, String sort, int page, int size) {
         // Xử lý sắp xếp
-        Sort.Order order = new Sort.Order(Sort.Direction.ASC, "id"); // Mặc định sắp xếp theo id tăng dần
+        Sort.Order order = new Sort.Order(Sort.Direction.DESC, "modifiedAt"); // Mặc định sắp xếp theo modifiedAt desc
         if (StringUtils.hasLength(sort)) {
             Pattern pattern = Pattern.compile("(\\w+?)(:)(.*)");
             Matcher matcher = pattern.matcher(sort);
