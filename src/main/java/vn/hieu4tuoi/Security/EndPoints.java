@@ -17,6 +17,7 @@ public class EndPoints {
             "/category/**",
             "/brand/**",
             "/upload/images/**",
+            "/banner/public/**",
     };
     public static final String[] PUBLIC_POST_ENDPOINTS = {
             "/api/auth/**",
@@ -39,18 +40,21 @@ public class EndPoints {
         "/product/**",
         "/user/**",
         "/upload/images",
+        "/banner/**",
     };
     public static final String[] ADMIN_PUT_ENDPOINTS = {
         "/category/**",
         "/brand/**",
         "/product/**",
         "/user/**",
+        "/banner/**",
     };
     public static final String[] ADMIN_DELTE_ENDPOINTS = {
         "/category/**",
         "/brand/**",
         "/product/**",
         "/user/**",
+        "/banner/**",
     };
 
 }

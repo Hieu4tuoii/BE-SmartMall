@@ -17,7 +17,6 @@ public class ProductColorVersionResponse {
     private String sku;
     private Long price;
     private String productVersionId;
-    private String colorHex;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

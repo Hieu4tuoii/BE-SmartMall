@@ -21,6 +21,7 @@ public interface ProductService {
     void updateVersion(String id, ProductVersionUpdateRequest request);
     void deleteVersion(String id);
     List<ProductVersionResponse> getVersionsByProductId(String productId);
+    List<ProductVersionResponse> getAllVersions(); // Lấy tất cả versions cho promotion
     // ProductVersionResponse findVersionById(String id);
     String createColorVersion(ProductColorVersionRequest request);
     void updateColorVersion(String id, ProductColorVersionRequest request);

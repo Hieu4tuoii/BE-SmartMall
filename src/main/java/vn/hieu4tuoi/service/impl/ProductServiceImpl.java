@@ -256,7 +256,6 @@ public class ProductServiceImpl implements ProductService {
 //        productColorVersion.setImage(request.getImage());
         productColorVersion.setPrice(request.getPrice());
         productColorVersion.setSku(request.getSku());
-        productColorVersion.setColorHex(request.getColorHex());
         productColorVersionRepository.save(productColorVersion);
     }
 
@@ -300,5 +299,32 @@ public class ProductServiceImpl implements ProductService {
                 .toList();
         productForUpdateResponse.setImageList(imageResponses);
         return productForUpdateResponse;
+    }
+
+    @Override
+    public List<ProductVersionResponse> getAllVersions() {
+        // Lấy tất cả products không bị xóa
+        List<Product> products = productRepository.findAllByIsDeleted(false);
+        List<String> productIds = products.stream().map(Product::getId).collect(Collectors.toList());
+        
+        // Lấy tất cả versions của các products này
+        List<ProductVersion> allVersions = productVersionRepository.findAll().stream()
+                .filter(v -> !v.getIsDeleted() && productIds.contains(v.getProductId()))
+                .collect(Collectors.toList());
+        
+        // Map product ID -> Product để lấy thông tin
+        Map<String, Product> productMap = products.stream()
+                .collect(Collectors.toMap(Product::getId, p -> p));
+        
+        // Map thành ProductVersionResponse với tên đầy đủ
+        return allVersions.stream().map(version -> {
+            ProductVersionResponse response = productVersionMapper.entityToResponse(version);
+            Product product = productMap.get(version.getProductId());
+            if (product != null) {
+                // Ghép tên product và version
+                response.setName(product.getName() + " " + version.getName());
+            }
+            return response;
+        }).collect(Collectors.toList());
     }
 }

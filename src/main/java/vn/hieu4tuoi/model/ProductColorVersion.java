@@ -25,8 +25,7 @@ public class ProductColorVersion extends AbstractEntity {
     @Column(name = "product_version_id")
     private String productVersionId;
 
-    @Column(name = "color_hex", length = 100)
-    private String colorHex;
+    // Mã màu đã bỏ khỏi hệ thống
     //tổng số hàng tồn kho
     @Column(name = "total_stock")
     private Long totalStock;

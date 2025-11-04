@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
@@ -19,9 +18,9 @@ public class Promotion extends AbstractEntity {
     @Column(name = "end_at")
     private LocalDateTime endAt;
 
-    @Column(name = "discount", precision = 5, scale = 2)
-    private BigDecimal discount;
+    @Column(name = "discount")
+    private Integer discount; //tính theo %
 
-    @Column(name = "maximum_discount_amount", precision = 15, scale = 2)
-    private BigDecimal maximumDiscountAmount;
+    @Column(name = "maximum_discount_amount")
+    private Long maximumDiscountAmount; //tính theo VNĐ
 }

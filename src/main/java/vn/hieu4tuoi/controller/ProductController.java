@@ -65,6 +65,11 @@ public class ProductController {
         return new ResponseData<>(HttpStatus.OK.value(), "Lấy danh sách phiên bản thành công", productService.getVersionsByProductId(id));
     }
 
+    @GetMapping("/versions/all")
+    public ResponseData<?> getAllVersions() {
+        return new ResponseData<>(HttpStatus.OK.value(), "Lấy tất cả phiên bản sản phẩm thành công", productService.getAllVersions());
+    }
+
     @PostMapping("/version")
     public ResponseData<String> createVersion(@RequestBody @Valid ProductVersionRequest request) {
         return new ResponseData<>(HttpStatus.OK.value(), "Tạo phiên bản sản phẩm thành công", productService.createVersion(request));

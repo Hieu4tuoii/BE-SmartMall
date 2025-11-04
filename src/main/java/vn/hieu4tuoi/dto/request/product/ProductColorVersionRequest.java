@@ -16,5 +16,4 @@ public class ProductColorVersionRequest {
     private String sku;
     private Long price;
     private String productVersionId;
-    private String colorHex;
 }

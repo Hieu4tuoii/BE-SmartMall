@@ -18,4 +18,7 @@ public class ProductVersion extends AbstractEntity {
 
     @Column(name = "product_id")
     private String productId;
+
+    @Column(name = "promotion_id")
+    private String promotionId;
 }
