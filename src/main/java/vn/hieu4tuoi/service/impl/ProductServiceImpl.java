@@ -375,7 +375,8 @@ public class ProductServiceImpl implements ProductService {
         }
         
         //nếu hasPromotion là true thì lấy ds product version có promotion còn hiệu lực
-        LocalDateTime now =  hasPromotion ? LocalDateTime.now() : null;
+        boolean filterByPromotion = Boolean.TRUE.equals(hasPromotion);
+        LocalDateTime now = filterByPromotion ? LocalDateTime.now() : null;
         Page<ProductVersion> productVersionPage = productVersionRepository.searchProductVersion(now, brandIds,
                 categoryIds, keyword, pageable);
 
@@ -398,23 +399,7 @@ public class ProductServiceImpl implements ProductService {
             ProductVersionResponse response = productVersionMapper.entityToPublicResponse(productVersion);
             response.setImageUrl(imageMap.get(productVersion.getProductId()));
             Promotion promotion = promotionMap.get(productVersion.getPromotionId());
-            if (promotion != null) {
-                // % discount
-                double discountPercent = promotion.getDiscount();
-                //giá dc giảm
-                double discountAmount = productVersion.getPrice() * discountPercent / 100;
-
-                // double discountedPrice = productVersion.getPrice() - discountAmount;
-                // nếu lớn hơn max discount thì cần set lại và tính lại % discount
-                if (discountAmount > promotion.getMaximumDiscountAmount()) {
-                    discountAmount = promotion.getMaximumDiscountAmount();
-                    discountPercent = discountAmount * 100 / productVersion.getPrice();
-                }
-                response.setDiscount(Math.round(discountPercent));
-                // Làm tròn đến nghìn đồng
-                long discountedPrice = (long) Math.round((productVersion.getPrice() - discountAmount) / 1000.0) * 1000;
-                response.setDiscountedPrice(discountedPrice);
-            }
+            applyPromotionToProductVersionResponse(productVersion, response, promotion);
             return response;
         }).toList();
 
@@ -426,7 +411,24 @@ public class ProductServiceImpl implements ProductService {
                 .build();
     }
 
-    private void applyPromotionToProductVersion(ProductVersion productVersion, Promotion promotion) {
+    private void applyPromotionToProductVersionResponse(ProductVersion productVersion, ProductVersionResponse response, Promotion promotion) {
+        if (promotion != null) {
+            // % discount
+            double discountPercent = promotion.getDiscount();
+            //giá dc giảm
+            double discountAmount = productVersion.getPrice() * discountPercent / 100;
+
+            // double discountedPrice = productVersion.getPrice() - discountAmount;
+            // nếu lớn hơn max discount thì cần set lại và tính lại % discount
+            if (discountAmount > promotion.getMaximumDiscountAmount()) {
+                discountAmount = promotion.getMaximumDiscountAmount();
+                discountPercent = discountAmount * 100 / productVersion.getPrice();
+            }
+            response.setDiscount(Math.round(discountPercent));
+            // Làm tròn đến nghìn đồng
+            long discountedPrice = (long) Math.round((productVersion.getPrice() - discountAmount) / 1000.0) * 1000;
+            response.setDiscountedPrice(discountedPrice);
+        }
     }
 
     // //sync data cho product version

@@ -74,7 +74,7 @@ public class ProductController {
 
     @GetMapping("/public/version/search")
     public ResponseData<?> searchPublicVersion(@RequestParam(required = false) Boolean hasPromotion, @RequestParam(required = false) List<String> brandIds, @RequestParam(required = false) List<String> categoryIds, @RequestParam(defaultValue = "") String keyword, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size, @RequestParam(required = false) String sort) {
-        return new ResponseData<>(HttpStatus.OK.value(), "Lấy danh sách phiên bản sản phẩm theo brand và category thành công", productService.searchPublicProductVersion(brandIds, categoryIds, hasPromotion, keyword, page, size, sort));
+        return new ResponseData<>(HttpStatus.OK.value(), "Tim kiem sản phẩm thành công", productService.searchPublicProductVersion(brandIds, categoryIds, hasPromotion, keyword, page, size, sort));
     }
 
     @PostMapping("/version")
