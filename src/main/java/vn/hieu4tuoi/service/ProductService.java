@@ -8,22 +8,24 @@ import vn.hieu4tuoi.dto.request.product.ProductVersionRequest;
 import vn.hieu4tuoi.dto.request.product.ProductVersionUpdateRequest;
 import vn.hieu4tuoi.dto.respone.PageResponse;
 import vn.hieu4tuoi.dto.respone.product.ProductForUpdateResponse;
-import vn.hieu4tuoi.dto.respone.product.ProductResponse;
+import vn.hieu4tuoi.dto.respone.product.ProductAdminResponse;
+import vn.hieu4tuoi.dto.respone.product.ProductVersionAdminResponse;
 import vn.hieu4tuoi.dto.respone.product.ProductVersionResponse;
 
 public interface ProductService {
     String create(ProductCreateRequest request);
     void update(String id, ProductCreateRequest request);
     void delete(String id);
-    PageResponse<List<ProductResponse>> findAllInAdmin(int page, int size, String sort, String keyword);
+    PageResponse<List<ProductAdminResponse>> findAllInAdmin(int page, int size, String sort, String keyword);
     ProductForUpdateResponse findById(String id);
     String createVersion(ProductVersionRequest request);
     void updateVersion(String id, ProductVersionUpdateRequest request);
     void deleteVersion(String id);
-    List<ProductVersionResponse> getVersionsByProductId(String productId);
-    List<ProductVersionResponse> getAllVersions(); // Lấy tất cả versions cho promotion
-    // ProductVersionResponse findVersionById(String id);
+    List<ProductVersionAdminResponse> getVersionsByProductId(String productId);
+    List<ProductVersionAdminResponse> getAllVersions(); // Lấy tất cả versions cho promotion
+    // ProductVersionAdminResponse findVersionById(String id);
     String createColorVersion(ProductColorVersionRequest request);
     void updateColorVersion(String id, ProductColorVersionRequest request);
     void deleteColorVersion(String id);
+    PageResponse<List<ProductVersionResponse>> searchPublicProductVersion(List<String> brandIds, List<String> categoryIds, Boolean hasPromotion, String keyword, int page, int size, String sort);
 }

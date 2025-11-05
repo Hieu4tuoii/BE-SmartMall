@@ -22,7 +22,7 @@ public class PromotionRequest {
     @NotNull(message = "Phần trăm giảm giá không được để trống")
     @Min(value = 1, message = "Phần trăm giảm giá phải lớn hơn 0")
     @Max(value = 100, message = "Phần trăm giảm giá không được vượt quá 100")
-    private Integer discount; //tính theo %
+    private Long discount; //tính theo %
     
     private Long maximumDiscountAmount; //tính theo VNĐ
     

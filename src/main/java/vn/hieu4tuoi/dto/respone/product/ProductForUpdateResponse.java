@@ -14,7 +14,6 @@ import lombok.Setter;
 public class ProductForUpdateResponse {
     private String id;
     private String name;
-    private String slug;
     private String model;
     private Integer warrantyPeriod;
     private String description;

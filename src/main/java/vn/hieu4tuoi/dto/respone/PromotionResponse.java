@@ -2,7 +2,7 @@ package vn.hieu4tuoi.dto.respone;
 
 import lombok.Getter;
 import lombok.Setter;
-import vn.hieu4tuoi.dto.respone.product.ProductResponse;
+import vn.hieu4tuoi.dto.respone.product.ProductAdminResponse;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,5 +17,5 @@ public class PromotionResponse {
     private Long maximumDiscountAmount; //tính theo VNĐ
     private LocalDateTime createdAt;
     private LocalDateTime modifiedAt;
-    private List<ProductResponse> products; // Danh sách sản phẩm áp dụng khuyến mãi
+    private List<ProductAdminResponse> products; // Danh sách sản phẩm áp dụng khuyến mãi
 }

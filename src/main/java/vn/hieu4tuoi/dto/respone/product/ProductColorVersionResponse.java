@@ -15,8 +15,9 @@ public class ProductColorVersionResponse {
     private String id;
     private String color;
     private String sku;
-    private Long price;
     private String productVersionId;
+    private Long totalStock;
+    private Long totalSold;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private LocalDateTime modifiedAt;
 }

@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import vn.hieu4tuoi.model.Promotion;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface PromotionRepository extends JpaRepository<Promotion, String> {
@@ -24,4 +25,8 @@ public interface PromotionRepository extends JpaRepository<Promotion, String> {
      */
     @Query("SELECT p FROM Promotion p WHERE p.isDeleted = :isDeleted ORDER BY p.createdAt DESC")
     List<Promotion> findAllByIsDeletedOrderByCreatedAtDesc(@Param("isDeleted") Boolean isDeleted);
+
+    //lấy ds khuyến mãi theo id in và thời gian hiện tại và chưa bị xóa
+    @Query("SELECT p FROM Promotion p WHERE p.id IN :ids AND p.startAt <= :now AND p.endAt >= :now AND p.isDeleted = :isDeleted")
+    List<Promotion> findAllByIdInAndStartAtLessThanEqualAndEndAtGreaterThanEqual(@Param("ids") List<String> ids, @Param("now") LocalDateTime now, @Param("isDeleted") Boolean isDeleted);
 }

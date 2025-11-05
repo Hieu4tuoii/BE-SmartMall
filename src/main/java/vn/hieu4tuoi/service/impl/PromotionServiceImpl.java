@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.hieu4tuoi.dto.request.promotion.PromotionRequest;
 import vn.hieu4tuoi.dto.respone.PromotionResponse;
-import vn.hieu4tuoi.dto.respone.product.ProductResponse;
+import vn.hieu4tuoi.dto.respone.product.ProductAdminResponse;
 import vn.hieu4tuoi.exception.ResourceNotFoundException;
 import vn.hieu4tuoi.mapper.PromotionMapper;
 import vn.hieu4tuoi.mapper.ProductMapper;
@@ -130,11 +130,11 @@ public class PromotionServiceImpl implements PromotionService {
                     .collect(Collectors.toMap(Image::getProductId, Image::getUrl));
             
             // Map ProductVersion thành ProductResponse (với tên là product name + version name)
-            List<ProductResponse> productResponses = productVersions.stream()
+            List<ProductAdminResponse> productResponses = productVersions.stream()
                     .map(pv -> {
                         Product product = productMap.get(pv.getProductId());
                         if (product != null) {
-                            ProductResponse productResponse = productMapper.entityToResponse(product);
+                            ProductAdminResponse productResponse = productMapper.entityToResponse(product);
                             productResponse.setId(pv.getId()); // Dùng ID của version
                             productResponse.setName(product.getName() + " - " + pv.getName()); // Ghép tên
                             productResponse.setImageUrl(imageMap.get(product.getId()));

@@ -19,7 +19,7 @@ public class Promotion extends AbstractEntity {
     private LocalDateTime endAt;
 
     @Column(name = "discount")
-    private Integer discount; //tính theo %
+    private Long discount; //tính theo %
 
     @Column(name = "maximum_discount_amount")
     private Long maximumDiscountAmount; //tính theo VNĐ

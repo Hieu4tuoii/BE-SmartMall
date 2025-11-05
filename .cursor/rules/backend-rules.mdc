@@ -1,0 +1,15 @@
+---
+alwaysApply: true
+---
+
+
+## Chung
+- Phải đọc kĩ code của dự án để đảm bảo follow theo style/conventions của dự án. Code phải có tính tái sử dụng, tránh lặp code dư thừa
+- Câu trả lời đưa ra phải là đúng chính xác ( trường hợp không biết thì nói không biết ), và là phương án tốt và phù hợp nhất cho dự án( best practice )
+- Code phải phù hợp chạy production
+- Phải kiểm tra lại các lỗi trước khi hoàn thành tác vụ 
+
+## Backend (Spring boot)
+- Chỉ lấy và xử lý các đối tượng isDeleted = false
+- khi xóa 1 đối tượng, cần xóa cả những đối tượng con
+- các api public ( gọi không cần truyền token ) thì thêm /public

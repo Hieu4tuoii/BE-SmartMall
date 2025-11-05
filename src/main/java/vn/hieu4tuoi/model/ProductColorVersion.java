@@ -19,21 +19,25 @@ public class ProductColorVersion extends AbstractEntity {
     @Column(name = "sku", length = 100)
     private String sku;
 
-    @Column(name = "price", precision = 15, scale = 2)
-    private Long price;
-
     @Column(name = "product_version_id")
     private String productVersionId;
 
     // Mã màu đã bỏ khỏi hệ thống
-    //tổng số hàng tồn kho
-    @Column(name = "total_stock")
-    private Long totalStock;
+   // tổng số lượng đã bán
+   @Column(name = "total_sold")
+   private Long totalSold;
+
+   //tổng số hàng tồn kho
+   @Column(name = "total_stock")
+   private Long totalStock;
 
     @PrePersist
     public void prePersist() {
         if (totalStock == null) {
             totalStock = 0L;
+        }
+        if (totalSold == null) {
+            totalSold = 0L;
         }
     }
 }

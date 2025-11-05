@@ -18,6 +18,7 @@ public class EndPoints {
             "/brand/**",
             "/upload/images/**",
             "/banner/public/**",
+            "/product/public/**",
     };
     public static final String[] PUBLIC_POST_ENDPOINTS = {
             "/api/auth/**",

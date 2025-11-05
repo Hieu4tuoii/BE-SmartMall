@@ -12,22 +12,15 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ProductResponse {
+public class ProductVersionAdminResponse {
     private String id;
     private String name;
     private String slug;
-    private String model;
-    // private Integer warrantyPeriod;
-    // private String description;
-    // private String specifications;
-    // private String status;
-    // private String brandId;
-    // private String categoryId;
+    private String productId;
     private Double averageRating;
     private Integer totalRating;
-    private Long totalSold;
-    private String imageUrl; //lấy 1 ảnh chính của sản phẩm
-    private Long totalStock;
+    private Long price;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private LocalDateTime modifiedAt;
+    private List<ProductColorVersionResponse> colorVersions;
 }

@@ -15,8 +15,18 @@ import lombok.Setter;
 public class ProductVersionResponse {
     private String id;
     private String name;
-    private String productId;
+    private String slug;
+    private String imageUrl;
+    private Double averageRating;
+    private Integer totalRating;
+    //tổng số lượng đã bán
+    private Long totalSold;
+    //giá gốc
+    private Long price;
+    //giá khuyến mãi
+    private Long discount; //tính theo %
+    //giá sau khuyến mãi
+    private Long discountedPrice;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-    private List<ProductColorVersionResponse> colorVersions;
+    private LocalDateTime modifiedAt;
 }

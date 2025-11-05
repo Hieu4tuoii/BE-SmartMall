@@ -1,5 +1,7 @@
 package vn.hieu4tuoi.controller;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -68,6 +70,11 @@ public class ProductController {
     @GetMapping("/versions/all")
     public ResponseData<?> getAllVersions() {
         return new ResponseData<>(HttpStatus.OK.value(), "Lấy tất cả phiên bản sản phẩm thành công", productService.getAllVersions());
+    }
+
+    @GetMapping("/public/version/search")
+    public ResponseData<?> searchPublicVersion(@RequestParam(required = false) Boolean hasPromotion, @RequestParam(required = false) List<String> brandIds, @RequestParam(required = false) List<String> categoryIds, @RequestParam(defaultValue = "") String keyword, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size, @RequestParam(required = false) String sort) {
+        return new ResponseData<>(HttpStatus.OK.value(), "Lấy danh sách phiên bản sản phẩm theo brand và category thành công", productService.searchPublicProductVersion(brandIds, categoryIds, hasPromotion, keyword, page, size, sort));
     }
 
     @PostMapping("/version")

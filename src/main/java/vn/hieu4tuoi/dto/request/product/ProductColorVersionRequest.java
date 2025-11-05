@@ -14,6 +14,5 @@ public class ProductColorVersionRequest {
     private String color;
 //    private String image;
     private String sku;
-    private Long price;
     private String productVersionId;
 }

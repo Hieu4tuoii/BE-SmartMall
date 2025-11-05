@@ -11,6 +11,8 @@ import lombok.Setter;
 public class ProductVersionUpdateRequest {
     // private String id;
     private String name;
+    private String slug;
+    private Long price;
 //    private String detailedPecifications;
     // private List<ProductColorVersionRequest> productColorVersions;
     // private String productId;

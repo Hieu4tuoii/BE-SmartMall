@@ -61,15 +61,15 @@ public class ImportOrderServiceImpl implements ImportOrderService {
 //                productItem.setImportOrderId(importOrder.getId());
                 productItems.add(productItem);
             }
-            //tăng số lượng tồn kho cho color version và product
+            //tăng số lượng tồn kho cho color version 
             ProductColorVersion productColorVersion = productColorVersionRepository.findById(colorVersionRequest.getId()).orElseThrow(() -> new ResourceNotFoundException("ProductColorVersion not found"));
             productColorVersion.setTotalStock(productColorVersion.getTotalStock() + quantityImportForColorVersion);
             productColorVersionRepository.save(productColorVersion);
 
-            ProductVersion productVersion = productVersionRepository.findById(productColorVersion.getProductVersionId()).orElseThrow(() -> new ResourceNotFoundException("ProductVersion not found"));
-            Product product = productRepository.findById(productVersion.getProductId()).orElseThrow(() -> new ResourceNotFoundException("Product not found"));
-            product.setTotalStock(product.getTotalStock() + quantityImportForColorVersion);
-            productRepository.save(product);
+            // ProductVersion productVersion = productVersionRepository.findById(productColorVersion.getProductVersionId()).orElseThrow(() -> new ResourceNotFoundException("ProductVersion not found"));
+            // Product product = productRepository.findById(productVersion.getProductId()).orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+            // // product.setTotalStock(product.getTotalStock() + quantityImportForColorVersion);
+            // productRepository.save(product);
         }
 
         //set tổng tiền cho phiếu nhập

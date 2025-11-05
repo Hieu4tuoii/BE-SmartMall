@@ -13,9 +13,6 @@ public class Product extends AbstractEntity {
     @Column(name = "name", length = 255)
     private String name;
 
-    @Column(name = "slug", length = 255)
-    private String slug;
-
     @Column(name = "model", length = 255)
     private String model;
 
@@ -37,17 +34,17 @@ public class Product extends AbstractEntity {
     @Column(name = "category_id")
     private String categoryId;
 
-    @Column(name = "average_rating")
-    private Double averageRating;
+    // @Column(name = "average_rating")
+    // private Double averageRating;
 
-    @Column(name = "total_rating")
-    private Integer totalRating;
+    // @Column(name = "total_rating")
+    // private Integer totalRating;
 
-    // tổng số lượng đã bán
-    @Column(name = "total_sold")
-    private Long totalSold;
+    // // tổng số lượng đã bán
+    // @Column(name = "total_sold")
+    // private Long totalSold;
 
-    //tổng số hàng tồn kho
-    @Column(name = "total_stock")
-    private Long totalStock;
+    // //tổng số hàng tồn kho
+    // @Column(name = "total_stock")
+    // private Long totalStock;
 }

@@ -13,7 +13,6 @@ import lombok.Setter;
 @NoArgsConstructor
 public class ProductCreateRequest {
     private String name;
-    private String slug;
     private String model;
     private Integer warrantyPeriod;
     private String description;

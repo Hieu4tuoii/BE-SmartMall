@@ -20,5 +20,6 @@ public class ProductVersionForPromotionResponse {
     private String versionName; // Tên version
     private String productId; // ID của product
     private String imageUrl; // Ảnh của product
+    
 }
 
