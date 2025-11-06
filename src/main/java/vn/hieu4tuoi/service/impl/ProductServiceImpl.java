@@ -3,6 +3,7 @@ package vn.hieu4tuoi.service.impl;
 import static vn.hieu4tuoi.common.StringUtils.toFullTextSearch;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -24,10 +25,13 @@ import vn.hieu4tuoi.dto.respone.product.ProductColorVersionResponse;
 import vn.hieu4tuoi.dto.respone.product.ProductForUpdateResponse;
 import vn.hieu4tuoi.dto.respone.product.ProductAdminResponse;
 import vn.hieu4tuoi.dto.respone.product.ProductVersionAdminResponse;
+import vn.hieu4tuoi.dto.respone.product.ProductVersionDetailResponse;
+import vn.hieu4tuoi.dto.respone.product.ProductVersionNameResponse;
 import vn.hieu4tuoi.dto.respone.product.ProductVersionResponse;
 import vn.hieu4tuoi.exception.ResourceNotFoundException;
 import vn.hieu4tuoi.mapper.ImageMapper;
-
+import vn.hieu4tuoi.mapper.BrandMapper;
+import vn.hieu4tuoi.mapper.CategoryMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -35,11 +39,15 @@ import org.springframework.data.domain.Sort;
 import vn.hieu4tuoi.mapper.ProductColorVersionMapper;
 import vn.hieu4tuoi.mapper.ProductMapper;
 import vn.hieu4tuoi.mapper.ProductVersionMapper;
+import vn.hieu4tuoi.model.Brand;
+import vn.hieu4tuoi.model.Category;
 import vn.hieu4tuoi.model.Image;
 import vn.hieu4tuoi.model.Product;
 import vn.hieu4tuoi.model.ProductColorVersion;
 import vn.hieu4tuoi.model.ProductVersion;
 import vn.hieu4tuoi.model.Promotion;
+import vn.hieu4tuoi.repository.BrandRepository;
+import vn.hieu4tuoi.repository.CategoryRepository;
 import vn.hieu4tuoi.repository.ImageRepository;
 import vn.hieu4tuoi.repository.ProductColorVersionRepository;
 import vn.hieu4tuoi.repository.ProductRepository;
@@ -60,7 +68,10 @@ public class ProductServiceImpl implements ProductService {
     private final ImageMapper imageMapper;
     private final ImageRepository imageRepository;
     private final PromotionRepository promotionRepository;
-
+    private final BrandRepository brandRepository;
+    private final CategoryRepository categoryRepository;
+    private final BrandMapper brandMapper;
+    private final CategoryMapper categoryMapper;
     @Override
     @Transactional
     public String create(ProductCreateRequest request) {
@@ -291,10 +302,10 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public List<ProductVersionAdminResponse> getVersionsByProductId(String productId) {
-        List<ProductVersion> versions = productVersionRepository.findByProductIdAndIsDeleted(productId, false);
+        List<ProductVersion> versions = productVersionRepository.findByProductIdAndIsDeletedOrderByCreatedAtAsc(productId, false);
         List<String> versionIds = versions.stream().map(ProductVersion::getId).toList();
         List<ProductColorVersion> colorVersions = productColorVersionRepository
-                .findByProductVersionIdInAndIsDeleted(versionIds, false);
+                .findByProductVersionIdInAndIsDeletedOrderByCreatedAtAsc(versionIds, false);
         return versions.stream().map(version -> {
             ProductVersionAdminResponse response = productVersionMapper.entityToResponse(version);
             List<ProductColorVersionResponse> colorResponses = colorVersions.stream()
@@ -351,7 +362,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public PageResponse<List<ProductVersionResponse>> searchPublicProductVersion(List<String> brandIds,
-            List<String> categoryIds, Boolean hasPromotion, String keyword, int page, int size, String sort) {
+            List<String> categoryIds, Boolean hasPromotion, Long minPrice, Long maxPrice, String keyword, int page, int size, String sort) {
         // Xử lý sắp xếp
         Sort.Order order = new Sort.Order(Sort.Direction.DESC, "modifiedAt"); // Mặc định sắp xếp theo modifiedAt desc
         if (StringUtils.hasLength(sort)) {
@@ -378,7 +389,7 @@ public class ProductServiceImpl implements ProductService {
         boolean filterByPromotion = Boolean.TRUE.equals(hasPromotion);
         LocalDateTime now = filterByPromotion ? LocalDateTime.now() : null;
         Page<ProductVersion> productVersionPage = productVersionRepository.searchProductVersion(now, brandIds,
-                categoryIds, keyword, pageable);
+                categoryIds, minPrice, maxPrice, keyword, pageable);
 
         //list productId
         List<String> productIds = productVersionPage.getContent().stream().map(ProductVersion::getProductId).toList();
@@ -387,12 +398,19 @@ public class ProductServiceImpl implements ProductService {
         Map<String, String> imageMap = imageList.stream()
                 .collect(Collectors.toMap(Image::getProductId, Image::getUrl));
 
+        //list product để lấy tên đầy đủ
+        List<Product> products = productRepository.findAllByIdInAndIsDeleted(productIds, false);
+        Map<String, Product> productMap = products.stream()
+                .collect(Collectors.toMap(Product::getId, p -> p));
+
         //list promotion id
         List<String> promotionIds = productVersionPage.getContent().stream().map(ProductVersion::getPromotionId).toList();
         //list promotion
         List<Promotion> promotions = promotionRepository.findAllByIdInAndStartAtLessThanEqualAndEndAtGreaterThanEqual(promotionIds, LocalDateTime.now(), false);
         Map<String, Promotion> promotionMap = promotions.stream()
                 .collect(Collectors.toMap(Promotion::getId, p -> p));
+
+        
         
         //set image url  và promotion cho product version response
         List<ProductVersionResponse> productVersionResponses = productVersionPage.getContent().stream().map(productVersion -> {
@@ -400,6 +418,10 @@ public class ProductServiceImpl implements ProductService {
             response.setImageUrl(imageMap.get(productVersion.getProductId()));
             Promotion promotion = promotionMap.get(productVersion.getPromotionId());
             applyPromotionToProductVersionResponse(productVersion, response, promotion);
+            Product product = productMap.get(productVersion.getProductId());
+            if (product != null) {
+                response.setName(product.getName() + " " + productVersion.getName());
+            }
             return response;
         }).toList();
 
@@ -409,6 +431,97 @@ public class ProductServiceImpl implements ProductService {
                 .totalPage(productVersionPage.getTotalPages())
                 .items(productVersionResponses)
                 .build();
+    }
+
+
+    @Override
+    public ProductVersionDetailResponse findVersionDetailBySlug(String slug) {
+        ProductVersion productVersion = productVersionRepository.findBySlugAndIsDeleted(slug, false);
+        if (productVersion == null) {
+            throw new ResourceNotFoundException("Không tìm thấy phiên bản sản phẩm");
+        }
+
+       //mapepr
+       ProductVersionDetailResponse response = productVersionMapper.entityToDetailResponse(productVersion);
+
+        //set list image của product sang cho response, sắp xếp ảnh mặc định lên đầu danh sách
+        List<Image> imageList = imageRepository.findAllByProductIdAndIsDeleted(productVersion.getProductId(), false);
+        List<String> imageUrls = imageList.stream()
+                .sorted(Comparator.comparing(Image::getIsDefault).reversed()) //sắp xếp ảnh mặc định lên đầu danh sách
+                .map(Image::getUrl)
+                .toList();
+        response.setImageUrls(imageUrls);
+
+        //set name của product 
+        Product product = productRepository.findByIdAndIsDeleted(productVersion.getProductId(), false);
+        if (product != null) {
+            response.setName(product.getName() + " " + productVersion.getName());
+            response.setSpecifications(product.getSpecifications());
+            response.setModel(product.getModel());
+            response.setWarrantyPeriod(product.getWarrantyPeriod());
+            response.setDescription(product.getDescription());
+        }
+
+        //set brand và category 
+        Brand brand = brandRepository.findByIdAndIsDeleted(product.getBrandId(), false);
+        if (brand != null) {
+            response.setBrand(brandMapper.toResponse(brand));
+        }
+        Category category = categoryRepository.findByIdAndIsDeleted(product.getCategoryId(), false);
+        if (category != null) {
+            response.setCategory(categoryMapper.toResponse(category));
+        }
+
+        //set ds version name 
+        List<ProductVersion> productVersions = productVersionRepository.findByProductIdAndIsDeletedOrderByCreatedAtAsc(productVersion.getProductId(), false);
+        List<ProductVersionNameResponse> productVersionNames = productVersions.stream().map(
+            versionNameItem -> {
+                ProductVersionNameResponse productVersionName = new ProductVersionNameResponse();
+                productVersionName.setId(versionNameItem.getId());
+                productVersionName.setName(versionNameItem.getName());
+                productVersionName.setSlug(versionNameItem.getSlug());
+                return productVersionName;
+            })
+            .toList();
+        response.setProductVersionNames(productVersionNames);
+
+        //set ds color version
+        List<ProductColorVersionResponse> productColorVersions = productColorVersionRepository.findByProductVersionIdAndIsDeletedOrderByCreatedAtAsc(productVersion.getId(), false).stream().map(
+            colorVersionItem -> {
+                ProductColorVersionResponse colorVersionResponse = new ProductColorVersionResponse();
+                colorVersionResponse.setId(colorVersionItem.getId());
+                colorVersionResponse.setColor(colorVersionItem.getColor());
+                colorVersionResponse.setSku(colorVersionItem.getSku());
+                colorVersionResponse.setProductVersionId(productVersion.getId());
+                colorVersionResponse.setTotalStock(colorVersionItem.getTotalStock());
+                colorVersionResponse.setTotalSold(colorVersionItem.getTotalSold());
+                colorVersionResponse.setCreatedAt(colorVersionItem.getCreatedAt());
+                colorVersionResponse.setModifiedAt(colorVersionItem.getModifiedAt());
+                return colorVersionResponse;
+            })
+            .toList();
+        response.setProductColorVersions(productColorVersions);
+
+        //set promotion 
+        Promotion promotion = promotionRepository.findByIdAndIsDeleted(productVersion.getPromotionId(), false);
+        if (promotion != null) {
+            // % discount
+            double discountPercent = promotion.getDiscount();
+            //giá dc giảm
+            double discountAmount = productVersion.getPrice() * discountPercent / 100;
+
+            // double discountedPrice = productVersion.getPrice() - discountAmount;
+            // nếu lớn hơn max discount thì cần set lại và tính lại % discount
+            if (discountAmount > promotion.getMaximumDiscountAmount()) {
+                discountAmount = promotion.getMaximumDiscountAmount();
+                discountPercent = discountAmount * 100 / productVersion.getPrice();
+            }
+            response.setDiscount(Math.round(discountPercent));
+            // Làm tròn đến nghìn đồng
+            long discountedPrice = (long) Math.round((productVersion.getPrice() - discountAmount) / 1000.0) * 1000;
+            response.setDiscountedPrice(discountedPrice);
+        }
+        return response;
     }
 
     private void applyPromotionToProductVersionResponse(ProductVersion productVersion, ProductVersionResponse response, Promotion promotion) {
@@ -430,7 +543,6 @@ public class ProductServiceImpl implements ProductService {
             response.setDiscountedPrice(discountedPrice);
         }
     }
-
     // //sync data cho product version
     // public void syncDataForProductVersion(String productVersionId) {
     // ProductVersion productVersion =

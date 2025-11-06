@@ -13,9 +13,9 @@ public class Category extends AbstractEntity {
     @Column(name = "name", length = 255)
     private String name;
 
-    @Column(name = "slug", length = 255)
-    private String slug;
+    // @Column(name = "slug", length = 255)
+    // private String slug;
 
-    @Column(name = "image_url")
-    private String imageUrl;
+    // @Column(name = "image_url")
+    // private String imageUrl;
 }

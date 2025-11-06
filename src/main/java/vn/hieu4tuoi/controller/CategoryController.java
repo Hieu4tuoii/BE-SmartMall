@@ -46,7 +46,7 @@ public class CategoryController {
         return new ResponseData<>(HttpStatus.OK.value(), "Lấy danh sách danh mục thành công", categoryService.findAll(page, size));
     }
 
-    @GetMapping("/all")
+    @GetMapping("/public/all")
     public ResponseData<?> findAllWithoutPagination() {
         return new ResponseData<>(HttpStatus.OK.value(), "Lấy danh sách danh mục thành công", categoryService.findAllWithoutPagination());
     }

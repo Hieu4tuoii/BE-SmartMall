@@ -10,5 +10,5 @@ import vn.hieu4tuoi.model.Category;
 public interface CategoryRepository extends JpaRepository<Category, String> {
     Category findByIdAndIsDeleted(String id, boolean isDeleted);
     Page<Category> findAllByIsDeleted(boolean isDeleted, Pageable pageable);
-    List<Category> findAllByIsDeleted(boolean isDeleted);
+    List<Category> findAllByIsDeletedOrderByModifiedAtAsc(boolean isDeleted);
 }

@@ -12,8 +12,6 @@ import vn.hieu4tuoi.model.ProductVersion;
 public interface ProductVersionRepository extends JpaRepository<ProductVersion, String> {
     ProductVersion findByIdAndIsDeleted(String id, Boolean isDeleted);
     
-    List<ProductVersion> findByProductIdAndIsDeleted(String productId, Boolean isDeleted);
-    
     /**
      * Tìm tất cả product versions theo danh sách ID và chưa bị xóa
      * @param ids Danh sách ID của product versions
@@ -93,6 +91,8 @@ public interface ProductVersionRepository extends JpaRepository<ProductVersion, 
               )
               AND (:brandIds IS NULL OR p.brandId IN :brandIds)
               AND (:categoryIds IS NULL OR p.categoryId IN :categoryIds)
+              AND (:minPrice IS NULL OR pv.price >= :minPrice)
+              AND (:maxPrice IS NULL OR pv.price <= :maxPrice)
               AND (:keyword IS NULL OR pv.fullTextSearch LIKE :keyword)
         """
     )
@@ -100,7 +100,15 @@ public interface ProductVersionRepository extends JpaRepository<ProductVersion, 
         @Param("now") LocalDateTime now,
         @Param("brandIds") List<String> brandIds,
         @Param("categoryIds") List<String> categoryIds,
+        @Param("minPrice") Long minPrice,
+        @Param("maxPrice") Long maxPrice,
         @Param("keyword") String keyword,
         Pageable pageable
     );
+
+    //tìm product version theo slug 
+    ProductVersion findBySlugAndIsDeleted(String slug, Boolean isDeleted);
+
+    //tìm ds product version theo product id và chưa bị xóa
+    List<ProductVersion> findByProductIdAndIsDeletedOrderByCreatedAtAsc(String productId, Boolean isDeleted);
 }

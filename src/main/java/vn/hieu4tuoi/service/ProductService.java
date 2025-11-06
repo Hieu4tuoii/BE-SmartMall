@@ -10,6 +10,7 @@ import vn.hieu4tuoi.dto.respone.PageResponse;
 import vn.hieu4tuoi.dto.respone.product.ProductForUpdateResponse;
 import vn.hieu4tuoi.dto.respone.product.ProductAdminResponse;
 import vn.hieu4tuoi.dto.respone.product.ProductVersionAdminResponse;
+import vn.hieu4tuoi.dto.respone.product.ProductVersionDetailResponse;
 import vn.hieu4tuoi.dto.respone.product.ProductVersionResponse;
 
 public interface ProductService {
@@ -27,5 +28,6 @@ public interface ProductService {
     String createColorVersion(ProductColorVersionRequest request);
     void updateColorVersion(String id, ProductColorVersionRequest request);
     void deleteColorVersion(String id);
-    PageResponse<List<ProductVersionResponse>> searchPublicProductVersion(List<String> brandIds, List<String> categoryIds, Boolean hasPromotion, String keyword, int page, int size, String sort);
+    PageResponse<List<ProductVersionResponse>> searchPublicProductVersion(List<String> brandIds, List<String> categoryIds, Boolean hasPromotion, Long minPrice, Long maxPrice, String keyword, int page, int size, String sort);
+    ProductVersionDetailResponse findVersionDetailBySlug(String slug);
 }

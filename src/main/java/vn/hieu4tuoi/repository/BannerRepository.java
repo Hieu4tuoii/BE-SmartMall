@@ -9,7 +9,7 @@ public interface BannerRepository extends JpaRepository<Banner, String> {
 
     Banner findByIdAndIsDeleted(String id, boolean isDeleted);
     
-    List<Banner> findAllByIsDeleted(boolean isDeleted);
+    List<Banner> findAllByIsDeletedOrderByModifiedAtDesc(boolean isDeleted);
 }
 
 

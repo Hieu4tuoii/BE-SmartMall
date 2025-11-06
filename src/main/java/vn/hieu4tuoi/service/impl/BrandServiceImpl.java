@@ -37,10 +37,10 @@ public class BrandServiceImpl implements BrandService {
         if (brand == null) {
             throw new ResourceNotFoundException("Không tìm thấy thương hiệu");
         }
-        // brand.setName(request.getName());
+        brand.setName(request.getName());
         // brand.setSlug(request.getSlug());
         // brand.setImageUrl(request.getImageUrl());
-        brand = brandMapper.toEntity(request);
+        // brand = brandMapper.toEntity(request);
         brand = brandRepository.save(brand);
         return brand.getId();
     }
@@ -83,7 +83,7 @@ public class BrandServiceImpl implements BrandService {
 
     @Override
     public List<BrandResponse> findAllWithoutPagination() {
-        List<Brand> brands = brandRepository.findAllByIsDeleted(false);
+        List<Brand> brands = brandRepository.findAllByIsDeletedOrderByModifiedAtAsc(false);
         return brands.stream()
                 .map(brandMapper::toResponse)
                 .collect(Collectors.toList());

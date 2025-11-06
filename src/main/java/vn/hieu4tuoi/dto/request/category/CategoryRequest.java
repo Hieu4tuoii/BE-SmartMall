@@ -10,9 +10,9 @@ public class CategoryRequest {
     @NotBlank(message = "Tên danh mục không được để trống")
     private String name;
 
-    @NotBlank(message = "Slug không được để trống")
-    private String slug;
+    // @NotBlank(message = "Slug không được để trống")
+    // private String slug;
 
-    private String imageUrl;
+    // private String imageUrl;
 }
 

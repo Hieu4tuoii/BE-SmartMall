@@ -10,8 +10,7 @@ import java.time.LocalDateTime;
 public class CategoryResponse {
     private String id;
     private String name;
-    private String slug;
-    private String imageUrl;
+//    private String slug;
     private LocalDateTime createdAt;
     private LocalDateTime modifiedAt;
 }

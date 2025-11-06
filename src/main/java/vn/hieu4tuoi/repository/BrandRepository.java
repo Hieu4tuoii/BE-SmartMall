@@ -10,7 +10,7 @@ import vn.hieu4tuoi.model.Brand;
 public interface BrandRepository extends JpaRepository<Brand, String> {
     Brand findByIdAndIsDeleted(String id, boolean isDeleted);
     Page<Brand> findAllByIsDeleted(boolean isDeleted, Pageable pageable);
-    List<Brand> findAllByIsDeleted(boolean isDeleted);
+    List<Brand> findAllByIsDeletedOrderByModifiedAtAsc(boolean isDeleted);
 }
 
 

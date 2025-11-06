@@ -6,6 +6,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import vn.hieu4tuoi.Security.CustomUserDetails;
 import vn.hieu4tuoi.model.Authorities;
 import vn.hieu4tuoi.model.User;
 import vn.hieu4tuoi.repository.UserRepository;
@@ -23,15 +24,32 @@ public class UserSecurityServiceImpl implements UserSecurityService {
         this.userRepository = userRepository;
     }
 
-    //hiện thực hàm loaduser
+    /**
+     * Load thông tin user theo username (email) và trả về CustomUserDetails
+     * CustomUserDetails chứa đầy đủ thông tin user để lưu vào SecurityContext
+     * 
+     * @param username Email của user
+     * @return CustomUserDetails chứa thông tin đầy đủ của user
+     * @throws UsernameNotFoundException nếu không tìm thấy user
+     */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByEmailAndIsDeletedFalse(username);
         if(user==null){
             throw  new UsernameNotFoundException("Tài khoản không tồn tại");
         }
-        //nhaajn vao username, pw, list grandtedauthoriry tra ve 1 userdetail
-        return new org.springframework.security.core.userdetails.User(user.getEmail(), user.getPassword(), rolesToAuthorities(user.getAuthorities()));
+        
+        // Tạo CustomUserDetails với đầy đủ thông tin user
+        return new CustomUserDetails(
+                user.getId(),
+                user.getEmail(),
+                user.getPassword(),
+                user.getFullName(),
+                user.getPhoneNumber(),
+                user.getAddress(),
+                user.getStatus(),
+                rolesToAuthorities(user.getAuthorities())
+        );
     }
 
     //chuyen doi ds authorities entity thành ds grandedauthority

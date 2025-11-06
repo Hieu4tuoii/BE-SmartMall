@@ -138,12 +138,12 @@ public class ImportOrderServiceImpl implements ImportOrderService {
         }
         // neu level 2 thì lấy ds phiên bản sản phẩm của 1 sản phẩm và ko bị xóa
         else if (request.getLevel() == 2) {
-            List<ProductVersion> productVersions = productVersionRepository.findByProductIdAndIsDeleted(request.getId(), false);
+            List<ProductVersion> productVersions = productVersionRepository.findByProductIdAndIsDeletedOrderByCreatedAtAsc(request.getId(), false);
             return productVersions.stream().map(productVersion -> new ProductImportSelectResponse(productVersion.getId(), productVersion.getName())).toList();
         }
         // neu level 3 thì lấy ds màu sắc của 1 phiên bản sản phẩm và ko bị xóa
         else {
-            List<ProductColorVersion> productColorVersions = productColorVersionRepository.findByProductVersionIdAndIsDeleted(request.getId(), false);
+            List<ProductColorVersion> productColorVersions = productColorVersionRepository.findByProductVersionIdAndIsDeletedOrderByCreatedAtAsc(request.getId(), false);
             return productColorVersions.stream().map(productColorVersion -> new ProductImportSelectResponse(productColorVersion.getId(), productColorVersion.getColor())).toList();
         }
     }

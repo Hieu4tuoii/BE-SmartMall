@@ -73,8 +73,13 @@ public class ProductController {
     }
 
     @GetMapping("/public/version/search")
-    public ResponseData<?> searchPublicVersion(@RequestParam(required = false) Boolean hasPromotion, @RequestParam(required = false) List<String> brandIds, @RequestParam(required = false) List<String> categoryIds, @RequestParam(defaultValue = "") String keyword, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size, @RequestParam(required = false) String sort) {
-        return new ResponseData<>(HttpStatus.OK.value(), "Tim kiem sản phẩm thành công", productService.searchPublicProductVersion(brandIds, categoryIds, hasPromotion, keyword, page, size, sort));
+    public ResponseData<?> searchPublicVersion(@RequestParam(required = false) Boolean hasPromotion, @RequestParam(required = false) List<String> brandIds, @RequestParam(required = false) List<String> categoryIds, @RequestParam(required = false) Long minPrice, @RequestParam(required = false) Long maxPrice, @RequestParam(defaultValue = "") String keyword, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size, @RequestParam(required = false) String sort) {
+        return new ResponseData<>(HttpStatus.OK.value(), "Tim kiem sản phẩm thành công", productService.searchPublicProductVersion(brandIds, categoryIds, hasPromotion, minPrice, maxPrice, keyword, page, size, sort));
+    }
+
+    @GetMapping("/public/version/{slug}")
+    public ResponseData<?> findVersionDetailBySlug(@PathVariable String slug) {
+        return new ResponseData<>(HttpStatus.OK.value(), "Lấy chi tiết phiên bản sản phẩm thành công", productService.findVersionDetailBySlug(slug));
     }
 
     @PostMapping("/version")

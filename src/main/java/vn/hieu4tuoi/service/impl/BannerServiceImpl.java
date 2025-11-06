@@ -50,7 +50,7 @@ public class BannerServiceImpl implements BannerService {
 
     @Override
     public List<BannerResponse> findAllWithoutPagination() {
-        return bannerRepository.findAllByIsDeleted(false)
+        return bannerRepository.findAllByIsDeletedOrderByModifiedAtDesc(false)
                 .stream()
                 .map(bannerMapper::toResponse)
                 .collect(Collectors.toList());

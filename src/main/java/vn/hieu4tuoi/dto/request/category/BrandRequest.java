@@ -10,9 +10,9 @@ public class BrandRequest {
     @NotBlank(message = "Tên thương hiệu không được để trống")
     private String name;
 
-    @NotBlank(message = "Slug không được để trống")
-    private String slug;
+    // @NotBlank(message = "Slug không được để trống")
+    // private String slug;
 
-    private String imageUrl;
+    // private String imageUrl;
 }
 

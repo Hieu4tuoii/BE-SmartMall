@@ -6,6 +6,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import vn.hieu4tuoi.common.StepActive;
+import vn.hieu4tuoi.common.UserStatus;
 import vn.hieu4tuoi.model.Authorities;
 import vn.hieu4tuoi.model.User;
 import vn.hieu4tuoi.repository.AuthoritiesRepository;
@@ -73,6 +74,7 @@ public class DataInitializer {
             admin.setPassword(passwordEncoder.encode("admin"));
             admin.setAuthorities(authoritiesList);
             admin.setStepActive(StepActive.ACTIVE);
+            admin.setStatus(UserStatus.ACTIVE);
 
             userRepository.save(admin);
         }

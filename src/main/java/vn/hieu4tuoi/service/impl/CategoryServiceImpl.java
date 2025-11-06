@@ -37,7 +37,8 @@ public class CategoryServiceImpl implements CategoryService {
         if (category == null) {
             throw new ResourceNotFoundException("Không tìm thấy danh mục");
         }
-        category = categoryMapper.toEntity(request);
+        // category = categoryMapper.toEntity(request);
+        category.setName(request.getName());
         category = categoryRepository.save(category);
         return category.getId();
     }
@@ -80,7 +81,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public List<CategoryResponse> findAllWithoutPagination() {
-        List<Category> categories = categoryRepository.findAllByIsDeleted(false);
+        List<Category> categories = categoryRepository.findAllByIsDeletedOrderByModifiedAtAsc(false);
         return categories.stream()
                 .map(categoryMapper::toResponse)
                 .collect(Collectors.toList());

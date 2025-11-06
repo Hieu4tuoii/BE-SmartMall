@@ -19,4 +19,6 @@ public interface ProductRepository extends JpaRepository<Product, String> {
 
     //get ds sản phẩm ko bị xóa
     List<Product> findAllByIsDeleted(boolean isDeleted);
+
+    List<Product> findAllByIdInAndIsDeleted(List<String> ids, boolean isDeleted);
 }

@@ -6,6 +6,6 @@ import vn.hieu4tuoi.model.ProductColorVersion;
 
 public interface ProductColorVersionRepository extends JpaRepository<ProductColorVersion, String> {
     ProductColorVersion findByIdAndIsDeleted(String id, Boolean isDeleted);
-    List<ProductColorVersion> findByProductVersionIdAndIsDeleted(String productVersionId, Boolean isDeleted);
-    List<ProductColorVersion> findByProductVersionIdInAndIsDeleted(List<String> productVersionIds, Boolean isDeleted);
+    List<ProductColorVersion> findByProductVersionIdAndIsDeletedOrderByCreatedAtAsc(String productVersionId, Boolean isDeleted);
+    List<ProductColorVersion> findByProductVersionIdInAndIsDeletedOrderByCreatedAtAsc(List<String> productVersionIds, Boolean isDeleted);
 }
