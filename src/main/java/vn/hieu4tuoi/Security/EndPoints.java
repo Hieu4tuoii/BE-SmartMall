@@ -19,12 +19,14 @@ public class EndPoints {
             "/upload/images/**",
             "/banner/public/**",
             "/product/public/**",
+            "/cart/count",
     };
     public static final String[] PUBLIC_POST_ENDPOINTS = {
             "/api/auth/**",
     };
 
     public static final String[] PUBLIC_PUT_ENDPOINTS = {
+        "/cart/update",
     };
 
     public static final String[] ADMIN_GET_ENDPOINTS = {

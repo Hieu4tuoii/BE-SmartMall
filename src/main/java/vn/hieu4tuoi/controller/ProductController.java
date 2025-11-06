@@ -34,7 +34,8 @@ public class ProductController {
 
     @PostMapping
     public ResponseData<String> create(@RequestBody @Valid ProductCreateRequest request) {
-        return new ResponseData<>(HttpStatus.CREATED.value(), "Tạo sản phẩm thành công", productService.create(request));
+        return new ResponseData<>(HttpStatus.CREATED.value(), "Tạo sản phẩm thành công",
+                productService.create(request));
     }
 
     @PutMapping("/{id}")
@@ -51,10 +52,11 @@ public class ProductController {
 
     @GetMapping("/list")
     public ResponseData<?> findAll(@RequestParam(defaultValue = "0") int page,
-                                   @RequestParam(defaultValue = "20") int size,
-                                   @RequestParam(defaultValue = "id") String sort,
-                                   @RequestParam(defaultValue = "") String keyword) {
-        return new ResponseData<>(HttpStatus.OK.value(), "Lấy danh sách sản phẩm thành công", productService.findAllInAdmin(page, size, sort, keyword));
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "id") String sort,
+            @RequestParam(defaultValue = "") String keyword) {
+        return new ResponseData<>(HttpStatus.OK.value(), "Lấy danh sách sản phẩm thành công",
+                productService.findAllInAdmin(page, size, sort, keyword));
     }
 
     @GetMapping("/{id}")
@@ -64,35 +66,54 @@ public class ProductController {
 
     @GetMapping("/{id}/versions")
     public ResponseData<?> getVersionsByProductId(@PathVariable String id) {
-        return new ResponseData<>(HttpStatus.OK.value(), "Lấy danh sách phiên bản thành công", productService.getVersionsByProductId(id));
+        return new ResponseData<>(HttpStatus.OK.value(), "Lấy danh sách phiên bản thành công",
+                productService.getVersionsByProductId(id));
     }
 
     @GetMapping("/versions/all")
     public ResponseData<?> getAllVersions() {
-        return new ResponseData<>(HttpStatus.OK.value(), "Lấy tất cả phiên bản sản phẩm thành công", productService.getAllVersions());
+        return new ResponseData<>(HttpStatus.OK.value(), "Lấy tất cả phiên bản sản phẩm thành công",
+                productService.getAllVersions());
     }
 
     @GetMapping("/public/version/search")
-    public ResponseData<?> searchPublicVersion(@RequestParam(required = false) Boolean hasPromotion, @RequestParam(required = false) List<String> brandIds, @RequestParam(required = false) List<String> categoryIds, @RequestParam(required = false) Long minPrice, @RequestParam(required = false) Long maxPrice, @RequestParam(defaultValue = "") String keyword, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size, @RequestParam(required = false) String sort) {
-        return new ResponseData<>(HttpStatus.OK.value(), "Tim kiem sản phẩm thành công", productService.searchPublicProductVersion(brandIds, categoryIds, hasPromotion, minPrice, maxPrice, keyword, page, size, sort));
+    public ResponseData<?> searchPublicVersion(@RequestParam(required = false) Boolean hasPromotion,
+            @RequestParam(required = false) List<String> brandIds,
+            @RequestParam(required = false) List<String> categoryIds, @RequestParam(required = false) Long minPrice,
+            @RequestParam(required = false) Long maxPrice, @RequestParam(defaultValue = "") String keyword,
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort) {
+        return new ResponseData<>(HttpStatus.OK.value(), "Tim kiem sản phẩm thành công",
+                productService.searchPublicProductVersion(brandIds, categoryIds, hasPromotion, minPrice, maxPrice,
+                        keyword, page, size, sort));
     }
 
     @GetMapping("/public/version/{slug}")
     public ResponseData<?> findVersionDetailBySlug(@PathVariable String slug) {
-        return new ResponseData<>(HttpStatus.OK.value(), "Lấy chi tiết phiên bản sản phẩm thành công", productService.findVersionDetailBySlug(slug));
+        return new ResponseData<>(HttpStatus.OK.value(), "Lấy chi tiết phiên bản sản phẩm thành công",
+                productService.findVersionDetailBySlug(slug));
+    }
+
+    // lấy ds product version liên quan theo product version slug
+    @GetMapping("/public/version/{slug}/related")
+    public ResponseData<?> getRelatedProductVersions(@PathVariable String slug) {
+        return new ResponseData<>(HttpStatus.OK.value(), "Lấy danh sách phiên bản sản phẩm liên quan thành công",
+                productService.getRelatedProductVersions(slug));
     }
 
     @PostMapping("/version")
     public ResponseData<String> createVersion(@RequestBody @Valid ProductVersionRequest request) {
-        return new ResponseData<>(HttpStatus.OK.value(), "Tạo phiên bản sản phẩm thành công", productService.createVersion(request));
+        return new ResponseData<>(HttpStatus.OK.value(), "Tạo phiên bản sản phẩm thành công",
+                productService.createVersion(request));
     }
-    
+
     @PutMapping("/version/{id}")
-    public ResponseData<?> updateVersion(@PathVariable String id, @RequestBody @Valid ProductVersionUpdateRequest request) {
+    public ResponseData<?> updateVersion(@PathVariable String id,
+            @RequestBody @Valid ProductVersionUpdateRequest request) {
         productService.updateVersion(id, request);
         return new ResponseData<>(HttpStatus.OK.value(), "Cập nhật phiên bản sản phẩm thành công");
     }
-    
+
     @DeleteMapping("/version/{id}")
     public ResponseData<?> deleteVersion(@PathVariable String id) {
         productService.deleteVersion(id);
@@ -101,11 +122,13 @@ public class ProductController {
 
     @PostMapping("/color-version")
     public ResponseData<String> createColorVersion(@RequestBody @Valid ProductColorVersionRequest request) {
-        return new ResponseData<>(HttpStatus.OK.value(), "Tạo phiên bản sản phẩm thành công", productService.createColorVersion(request));
+        return new ResponseData<>(HttpStatus.OK.value(), "Tạo phiên bản sản phẩm thành công",
+                productService.createColorVersion(request));
     }
-    
+
     @PutMapping("/color-version/{id}")
-    public ResponseData<?> updateColorVersion(@PathVariable String id, @RequestBody @Valid ProductColorVersionRequest request) {
+    public ResponseData<?> updateColorVersion(@PathVariable String id,
+            @RequestBody @Valid ProductColorVersionRequest request) {
         productService.updateColorVersion(id, request);
         return new ResponseData<>(HttpStatus.OK.value(), "Cập nhật phiên bản sản phẩm thành công");
     }

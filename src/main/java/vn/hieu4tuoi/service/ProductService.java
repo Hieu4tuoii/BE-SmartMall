@@ -30,4 +30,7 @@ public interface ProductService {
     void deleteColorVersion(String id);
     PageResponse<List<ProductVersionResponse>> searchPublicProductVersion(List<String> brandIds, List<String> categoryIds, Boolean hasPromotion, Long minPrice, Long maxPrice, String keyword, int page, int size, String sort);
     ProductVersionDetailResponse findVersionDetailBySlug(String slug);
+
+    //lấy ds phiên bản sản phẩm liên quan
+    List<ProductVersionResponse> getRelatedProductVersions(String productVersionSlug);
 }

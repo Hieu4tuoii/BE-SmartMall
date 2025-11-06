@@ -106,6 +106,31 @@ public interface ProductVersionRepository extends JpaRepository<ProductVersion, 
         Pageable pageable
     );
 
+    //tìm product version liên quan theo brandId và categoryId và giá chênh lệch không quá 30%
+    @Query(
+        value = """
+            SELECT pv
+            FROM ProductVersion pv
+            JOIN Product p ON p.id = pv.productId
+            WHERE pv.isDeleted = false
+            AND p.isDeleted = false
+            AND p.brandId = :brandId
+            AND p.categoryId = :categoryId
+            AND pv.price >= :minPrice
+            AND pv.price <= :maxPrice
+            AND pv.price BETWEEN :minPrice * 0.7 AND :maxPrice * 1.3
+            AND pv.id != :productVersionId
+        """
+    )
+    Page<ProductVersion> findByBrandIdAndCategoryIdAndPriceLessThanEqualAndPriceGreaterThanEqual(
+        @Param("brandId") String brandId,
+        @Param("categoryId") String categoryId,
+        @Param("minPrice") Long minPrice,
+        @Param("maxPrice") Long maxPrice,
+        @Param("productVersionId") String productVersionId,
+        Pageable pageable
+    );
+
     //tìm product version theo slug 
     ProductVersion findBySlugAndIsDeleted(String slug, Boolean isDeleted);
 
