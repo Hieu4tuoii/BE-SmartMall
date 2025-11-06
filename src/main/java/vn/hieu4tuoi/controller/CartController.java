@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import vn.hieu4tuoi.dto.request.cart.UpdateCartItemRequest;
 import vn.hieu4tuoi.dto.respone.ResponseData;
+import vn.hieu4tuoi.dto.respone.cart.CartResponse;
 import vn.hieu4tuoi.service.CartService;
 
 @RestController
@@ -28,5 +29,10 @@ public class CartController {
     @GetMapping("/count")
     public ResponseData<Integer> getCartItemCount() {
         return new ResponseData<Integer>(HttpStatus.OK.value(), "Lấy số lượng sản phẩm trong giỏ hàng thành công", cartService.getCartItemCount());
+    }
+
+    @GetMapping("/detail")
+    public ResponseData<CartResponse> getCartDetail() {
+        return new ResponseData<CartResponse>(HttpStatus.OK.value(), "Lấy thông tin giỏ hàng thành công", cartService.getCartDetail());
     }
 }

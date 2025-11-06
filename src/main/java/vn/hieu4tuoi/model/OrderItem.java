@@ -12,15 +12,18 @@ import java.math.BigDecimal;
 @Table(name = "order_item")
 public class OrderItem extends AbstractEntity {
 
-    @Column(name = "selling_price", precision = 15, scale = 2)
-    private BigDecimal sellingPrice;
+    //giá sau khuyến mãi
+    @Column(name = "discounted_price")
+    private Long discountedPrice;
 
-    @Column(name = "price_after_promotion", precision = 15, scale = 2)
-    private BigDecimal priceAfterPromotion;
+    @Column(name = "price")
+    private Long price;//giá gốc
 
     @Column(name = "product_item_id")
     private String productItemId;
 
     @Column(name = "order_id")
     private String orderId;
+    @Column(name = "product_version_id")
+    private String productVersionId;
 }

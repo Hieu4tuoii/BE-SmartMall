@@ -528,7 +528,7 @@ public class ProductServiceImpl implements ProductService {
      * @param productVersions Danh sách ProductVersion cần xử lý
      * @return Danh sách ProductVersionResponse đã được làm giàu thông tin
      */
-    private List<ProductVersionResponse> enrichProductVersionResponses(List<ProductVersion> productVersions) {
+    public  List<ProductVersionResponse> enrichProductVersionResponses(List<ProductVersion> productVersions) {
         if (productVersions == null || productVersions.isEmpty()) {
             return List.of();
         }
