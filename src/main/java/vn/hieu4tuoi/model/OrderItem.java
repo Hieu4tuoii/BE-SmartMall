@@ -24,6 +24,6 @@ public class OrderItem extends AbstractEntity {
 
     @Column(name = "order_id")
     private String orderId;
-    @Column(name = "product_version_id")
-    private String productVersionId;
+    @Column(name = "product_color_version_id")
+    private String productColorVersionId;
 }

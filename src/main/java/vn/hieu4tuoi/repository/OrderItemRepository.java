@@ -2,6 +2,10 @@ package vn.hieu4tuoi.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import vn.hieu4tuoi.model.OrderItem;
+import java.util.List;
 
 public interface OrderItemRepository extends JpaRepository<OrderItem, String> {
+
+    //tìm theo orderid
+    List<OrderItem> findByOrderIdInAndIsDeleted(List<String> orderIds, Boolean isDeleted);
 }

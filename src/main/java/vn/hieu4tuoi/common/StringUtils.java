@@ -38,7 +38,7 @@ public final class StringUtils {
         if (value == null) {
             return null;
         }
-        return keepAlphaNumericNewLine(removeAccents(value.toLowerCase()));
+        return keepAlphaNumericNewLine(removeAccents(value.toLowerCase().trim()));
     }
 }
 

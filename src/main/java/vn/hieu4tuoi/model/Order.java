@@ -33,4 +33,7 @@ public class Order extends AbstractEntity {
 
     @Column(name = "user_id")
     private String userId;
+
+    @Column(name = "full_text_search", length = 512)
+    private String fullTextSearch;
 }
