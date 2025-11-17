@@ -8,4 +8,6 @@ import java.util.List;
 
 public interface ProductItemRepository extends JpaRepository<ProductItem, String> {
     List<ProductItem> findByImportOrderIdAndIsDeletedFalse(String importOrderId);
+
+    List<ProductItem> findAllByIdInAndIsDeleted(List<String> ids, boolean isDeleted);
 }

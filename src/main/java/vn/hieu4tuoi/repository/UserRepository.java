@@ -23,4 +23,6 @@ public interface UserRepository extends JpaRepository<User, String> {
     @Query("SELECT u FROM User u JOIN u.authorities a WHERE a = :authority AND u.isDeleted = false " +
            "AND (LOWER(u.email) LIKE :keyword OR LOWER(u.fullName) LIKE :keyword OR LOWER(u.phoneNumber) LIKE :keyword)")
     Page<User> searchCustomerByKeyword(@Param("authority") Authorities authority, @Param("keyword") String keyword, Pageable pageable);
+
+    List<User> findAllByIdInAndIsDeleted(List<String> ids, boolean isDeleted);
 }

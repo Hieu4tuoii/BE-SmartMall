@@ -13,8 +13,10 @@ import org.springframework.web.bind.annotation.*;
 import vn.hieu4tuoi.dto.request.order.OrderRequest;
 import vn.hieu4tuoi.dto.respone.ResponseData;
 import vn.hieu4tuoi.dto.respone.PageResponse;
+import vn.hieu4tuoi.dto.respone.order.OrderDetailResponse;
 import vn.hieu4tuoi.dto.respone.order.OrderResponse;
 import vn.hieu4tuoi.service.OrderService;
+import vn.hieu4tuoi.common.OrderStatus;
 
 @RestController
 @RequestMapping("/order")
@@ -30,7 +32,12 @@ public class OrderController {
 
     @GetMapping("/list")
     public ResponseData<PageResponse<List<OrderResponse>>> getOrderList(@RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size, @RequestParam(defaultValue = "modifiedAt:desc") String sort, @RequestParam(defaultValue = "") String keyword) {
-        return new ResponseData<>(HttpStatus.OK.value(), "Lấy danh sách đơn hàng thành công", orderService.getOrderList(page, size, sort, keyword));
+            @RequestParam(defaultValue = "10") int size, @RequestParam(defaultValue = "modifiedAt:desc") String sort, @RequestParam(defaultValue = "") String keyword, @RequestParam(defaultValue = "PENDING") OrderStatus status) {
+        return new ResponseData<>(HttpStatus.OK.value(), "Lấy danh sách đơn hàng thành công", orderService.getOrderList(page, size, sort, keyword, status));
+    }
+
+    @GetMapping("/detail/{id}")
+    public ResponseData<OrderDetailResponse> getOrderDetail(@PathVariable String id) {
+        return new ResponseData<>(HttpStatus.OK.value(), "Lấy chi tiết đơn hàng thành công", orderService.getOrderDetail(id));
     }
 }

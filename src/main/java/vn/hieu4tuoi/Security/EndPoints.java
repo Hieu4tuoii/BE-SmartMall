@@ -34,6 +34,7 @@ public class EndPoints {
         "/brand/**",
         "/product/**",
         "/user/**",
+        "/order/**",
         
     };
 

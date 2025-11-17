@@ -3,6 +3,7 @@ package vn.hieu4tuoi.mapper;
 import org.mapstruct.Mapper;
 
 import vn.hieu4tuoi.dto.request.order.OrderRequest;
+import vn.hieu4tuoi.dto.respone.order.OrderDetailResponse;
 import vn.hieu4tuoi.dto.respone.order.OrderResponse;
 import vn.hieu4tuoi.model.Order;
 
@@ -11,4 +12,5 @@ public interface OrderMapper {
     
     Order requestToEntity(OrderRequest request);
     OrderResponse entityToResponse(Order order);
+    OrderDetailResponse entityToDetailResponse(Order order);
 }
