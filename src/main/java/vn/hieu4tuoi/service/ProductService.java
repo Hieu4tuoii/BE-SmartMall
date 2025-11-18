@@ -2,12 +2,14 @@ package vn.hieu4tuoi.service;
 
 import java.util.List;
 
+import vn.hieu4tuoi.common.ProductItemStatus;
 import vn.hieu4tuoi.dto.request.product.ProductColorVersionRequest;
 import vn.hieu4tuoi.dto.request.product.ProductCreateRequest;
 import vn.hieu4tuoi.dto.request.product.ProductVersionRequest;
 import vn.hieu4tuoi.dto.request.product.ProductVersionUpdateRequest;
 import vn.hieu4tuoi.dto.respone.PageResponse;
 import vn.hieu4tuoi.dto.respone.product.ProductForUpdateResponse;
+import vn.hieu4tuoi.dto.respone.product.ProductItemAdminResponse;
 import vn.hieu4tuoi.dto.respone.product.ProductAdminResponse;
 import vn.hieu4tuoi.dto.respone.product.ProductVersionAdminResponse;
 import vn.hieu4tuoi.dto.respone.product.ProductVersionDetailResponse;
@@ -33,4 +35,7 @@ public interface ProductService {
 
     //lấy ds phiên bản sản phẩm liên quan
     List<ProductVersionResponse> getRelatedProductVersions(String productVersionSlug);
+
+    //ds product item của sản product version color 
+    PageResponse<List<ProductItemAdminResponse>> getProductItemsByProductVersionColorId(String productVersionColorId, ProductItemStatus status, int page, int size, String sort, String imeiOrSerial);
 }

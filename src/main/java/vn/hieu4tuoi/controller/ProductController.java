@@ -22,6 +22,7 @@ import vn.hieu4tuoi.dto.request.product.ProductCreateRequest;
 import vn.hieu4tuoi.dto.request.product.ProductVersionRequest;
 import vn.hieu4tuoi.dto.request.product.ProductVersionUpdateRequest;
 import vn.hieu4tuoi.dto.respone.ResponseData;
+import vn.hieu4tuoi.common.ProductItemStatus;
 import vn.hieu4tuoi.service.ProductService;
 
 @RestController
@@ -137,5 +138,11 @@ public class ProductController {
     public ResponseData<?> deleteColorVersion(@PathVariable String id) {
         productService.deleteColorVersion(id);
         return new ResponseData<>(HttpStatus.OK.value(), "Xóa phiên bản sản phẩm thành công");
+    }
+
+    @GetMapping("/color-version/{id}/items")
+    public ResponseData<?> getProductItemsByProductVersionColorId(@PathVariable String id, @RequestParam(required = false) ProductItemStatus status, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size, @RequestParam(defaultValue = "id") String sort, @RequestParam(defaultValue = "") String imeiOrSerial) {
+        return new ResponseData<>(HttpStatus.OK.value(), "Lấy danh sách sản phẩm thành công",
+                productService.getProductItemsByProductVersionColorId(id, status, page, size, sort, imeiOrSerial));
     }
 }

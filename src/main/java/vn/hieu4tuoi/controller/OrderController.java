@@ -11,6 +11,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import vn.hieu4tuoi.dto.request.order.OrderRequest;
+import vn.hieu4tuoi.dto.request.order.UpdateOrderStatusRequest;
 import vn.hieu4tuoi.dto.respone.ResponseData;
 import vn.hieu4tuoi.dto.respone.PageResponse;
 import vn.hieu4tuoi.dto.respone.order.OrderDetailResponse;
@@ -32,12 +33,18 @@ public class OrderController {
 
     @GetMapping("/list")
     public ResponseData<PageResponse<List<OrderResponse>>> getOrderList(@RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size, @RequestParam(defaultValue = "modifiedAt:desc") String sort, @RequestParam(defaultValue = "") String keyword, @RequestParam(defaultValue = "PENDING") OrderStatus status) {
+            @RequestParam(defaultValue = "10") int size, @RequestParam(defaultValue = "modifiedAt:desc") String sort, @RequestParam(defaultValue = "") String keyword, @RequestParam(required = false) OrderStatus status) {
         return new ResponseData<>(HttpStatus.OK.value(), "Lấy danh sách đơn hàng thành công", orderService.getOrderList(page, size, sort, keyword, status));
     }
 
     @GetMapping("/detail/{id}")
     public ResponseData<OrderDetailResponse> getOrderDetail(@PathVariable String id) {
         return new ResponseData<>(HttpStatus.OK.value(), "Lấy chi tiết đơn hàng thành công", orderService.getOrderDetail(id));
+    }
+
+    @PutMapping("/update-status/{id}")
+    public ResponseData<?> updateOrderStatus(@PathVariable String id, @RequestBody @Valid UpdateOrderStatusRequest request) {
+        orderService.updateOrderStatus(id, request);
+        return new ResponseData<>(HttpStatus.OK.value(), "Cập nhật trạng thái đơn hàng thành công", null);
     }
 }

@@ -14,6 +14,9 @@ import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
+
+import vn.hieu4tuoi.common.CommonUtils;
+import vn.hieu4tuoi.common.ProductItemStatus;
 import vn.hieu4tuoi.dto.request.product.ImageRequest;
 import vn.hieu4tuoi.dto.request.product.ProductColorVersionRequest;
 import vn.hieu4tuoi.dto.request.product.ProductCreateRequest;
@@ -23,6 +26,7 @@ import vn.hieu4tuoi.dto.respone.PageResponse;
 import vn.hieu4tuoi.dto.respone.product.ImageResponse;
 import vn.hieu4tuoi.dto.respone.product.ProductColorVersionResponse;
 import vn.hieu4tuoi.dto.respone.product.ProductForUpdateResponse;
+import vn.hieu4tuoi.dto.respone.product.ProductItemAdminResponse;
 import vn.hieu4tuoi.dto.respone.product.ProductAdminResponse;
 import vn.hieu4tuoi.dto.respone.product.ProductVersionAdminResponse;
 import vn.hieu4tuoi.dto.respone.product.ProductVersionDetailResponse;
@@ -30,6 +34,7 @@ import vn.hieu4tuoi.dto.respone.product.ProductVersionNameResponse;
 import vn.hieu4tuoi.dto.respone.product.ProductVersionResponse;
 import vn.hieu4tuoi.exception.ResourceNotFoundException;
 import vn.hieu4tuoi.mapper.ImageMapper;
+import vn.hieu4tuoi.mapper.ProductItemMapper;
 import vn.hieu4tuoi.mapper.BrandMapper;
 import vn.hieu4tuoi.mapper.CategoryMapper;
 import org.springframework.data.domain.Page;
@@ -44,12 +49,14 @@ import vn.hieu4tuoi.model.Category;
 import vn.hieu4tuoi.model.Image;
 import vn.hieu4tuoi.model.Product;
 import vn.hieu4tuoi.model.ProductColorVersion;
+import vn.hieu4tuoi.model.ProductItem;
 import vn.hieu4tuoi.model.ProductVersion;
 import vn.hieu4tuoi.model.Promotion;
 import vn.hieu4tuoi.repository.BrandRepository;
 import vn.hieu4tuoi.repository.CategoryRepository;
 import vn.hieu4tuoi.repository.ImageRepository;
 import vn.hieu4tuoi.repository.ProductColorVersionRepository;
+import vn.hieu4tuoi.repository.ProductItemRepository;
 import vn.hieu4tuoi.repository.ProductRepository;
 import vn.hieu4tuoi.repository.ProductVersionRepository;
 import vn.hieu4tuoi.repository.PromotionRepository;
@@ -72,6 +79,8 @@ public class ProductServiceImpl implements ProductService {
     private final CategoryRepository categoryRepository;
     private final BrandMapper brandMapper;
     private final CategoryMapper categoryMapper;
+    private final ProductItemRepository productItemRepository;
+    private final ProductItemMapper productItemMapper;
     @Override
     @Transactional
     public String create(ProductCreateRequest request) {
@@ -593,6 +602,21 @@ public class ProductServiceImpl implements ProductService {
             long discountedPrice = (long) Math.round((productVersion.getPrice() - discountAmount) / 1000.0) * 1000;
             response.setDiscountedPrice(discountedPrice);
         }
+    }
+
+
+    //ds product item của sản product version color
+    @Override
+    public PageResponse<List<ProductItemAdminResponse>> getProductItemsByProductVersionColorId(String productVersionColorId, ProductItemStatus status, int page, int size, String sort, String imeiOrSerial) {
+        Pageable pageable = CommonUtils.createPageable(page, size, sort);
+        String imeiOrSerialSearch = CommonUtils.createKeywordSearch(imeiOrSerial);
+        Page<ProductItem> productItems = productItemRepository.findByProductColorVersionIdAndStatusAndImeiOrSerial(productVersionColorId, status, imeiOrSerialSearch, false, pageable);
+        return PageResponse.<List<ProductItemAdminResponse>>builder()
+                .pageNo(page)
+                .pageSize(size)
+                .totalPage(productItems.getTotalPages())
+                .items(productItems.getContent().stream().map(productItemMapper::entityToResponse).toList())
+                .build();
     }
 
     

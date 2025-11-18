@@ -11,7 +11,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ProductOrderResponse {
-    private String id;
+    private String orderItemId;
     private String productName;
     private String productVersionName;
     private String colorName;
