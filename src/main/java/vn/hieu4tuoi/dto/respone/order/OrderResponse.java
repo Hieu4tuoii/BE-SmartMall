@@ -22,7 +22,9 @@ public class OrderResponse {
     private PaymentMethod paymentMethod;
     private PaymentStatus paymentStatus;
     private Long totalPrice;
-    private CustomerOrderResponse customer;
+    private String note;
+    private String address;
+    private String phoneNumber;
     private List<ProductOrderResponse> products;
     private LocalDateTime createdAt;
     private LocalDateTime modifiedAt;

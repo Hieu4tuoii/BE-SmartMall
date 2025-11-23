@@ -1,5 +1,6 @@
 package vn.hieu4tuoi.dto.respone.order;
 
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,14 +10,10 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ProductOrderResponse {
+public class ProductOrderAdminResponse {
     private String orderItemId;
     private String productName;
     private String productVersionName;
     private String colorName;
-    private Long price;
-    private String imeiOrSerial;
-    private String imageUrl;
-    private String slug;
+    private Integer quantity;
 }
-

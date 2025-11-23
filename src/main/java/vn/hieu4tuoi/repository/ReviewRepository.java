@@ -10,6 +10,6 @@ import vn.hieu4tuoi.model.Review;
 
 public interface ReviewRepository extends JpaRepository<Review, String> {
     //get ds đánh giá theo productVersionId, có phân trang
-    @Query("SELECT r FROM Review r WHERE r.productVersionId = :productVersionId AND r.isDeleted = false")
+    @Query("SELECT r FROM Review r WHERE r.productVersionId = :productVersionId AND r.isDeleted = :isDeleted")
     Page<Review> findAllByProductVersionIdAndIsDeleted(@Param("productVersionId") String productVersionId, @Param("isDeleted") boolean isDeleted, Pageable pageable);
 }   

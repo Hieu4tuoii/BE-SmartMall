@@ -1,5 +1,7 @@
 package vn.hieu4tuoi.repository;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,4 +17,6 @@ public interface OrderRepository extends JpaRepository<Order, String> {
     Page<Order> findAllByFullTextSearchOrIdAndStatus(@Param("keyword") String keyword, @Param("id") String id, @Param("status") OrderStatus status, Pageable pageable);
 
     Order findByIdAndIsDeleted(String id, boolean isDeleted);
+
+    List<Order> findAllByUserIdAndIsDeletedOrderByCreatedAtDesc(String userId, boolean isDeleted);
 }

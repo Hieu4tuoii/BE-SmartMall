@@ -15,7 +15,7 @@ import vn.hieu4tuoi.dto.request.order.UpdateOrderStatusRequest;
 import vn.hieu4tuoi.dto.respone.ResponseData;
 import vn.hieu4tuoi.dto.respone.PageResponse;
 import vn.hieu4tuoi.dto.respone.order.OrderDetailResponse;
-import vn.hieu4tuoi.dto.respone.order.OrderResponse;
+import vn.hieu4tuoi.dto.respone.order.OrderAdminResponse;
 import vn.hieu4tuoi.service.OrderService;
 import vn.hieu4tuoi.common.OrderStatus;
 
@@ -32,10 +32,17 @@ public class OrderController {
     }
 
     @GetMapping("/list")
-    public ResponseData<PageResponse<List<OrderResponse>>> getOrderList(@RequestParam(defaultValue = "0") int page,
+    public ResponseData<PageResponse<List<OrderAdminResponse>>> getOrderList(@RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size, @RequestParam(defaultValue = "modifiedAt:desc") String sort, @RequestParam(defaultValue = "") String keyword, @RequestParam(required = false) OrderStatus status) {
         return new ResponseData<>(HttpStatus.OK.value(), "Lấy danh sách đơn hàng thành công", orderService.getOrderList(page, size, sort, keyword, status));
     }
+
+    @GetMapping("/list/current-user")
+    public ResponseData<?> getOrderListByCurrentUser() {
+        return new ResponseData<>(HttpStatus.OK.value(), "Lấy danh sách đơn hàng thành công", orderService.getOrderListByCurrentUser());
+    }
+
+
 
     @GetMapping("/detail/{id}")
     public ResponseData<OrderDetailResponse> getOrderDetail(@PathVariable String id) {

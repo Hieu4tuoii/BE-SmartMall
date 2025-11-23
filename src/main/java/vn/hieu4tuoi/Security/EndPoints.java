@@ -26,7 +26,15 @@ public class EndPoints {
     };
 
     public static final String[] PUBLIC_PUT_ENDPOINTS = {
+       
+    };
+
+    public static final String[] CUSTOMER_PUT_ENDPOINTS = {
         "/cart/update",
+    };
+
+    public static final String[] CUSTOMER_GET_ENDPOINTS = {
+        "/order/list/current-user",
     };
 
     public static final String[] ADMIN_GET_ENDPOINTS = {

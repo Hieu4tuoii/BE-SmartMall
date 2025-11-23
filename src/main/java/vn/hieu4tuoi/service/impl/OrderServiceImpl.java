@@ -6,11 +6,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -20,17 +18,20 @@ import vn.hieu4tuoi.service.OrderService;
 import vn.hieu4tuoi.Security.SecurityUtils;
 import vn.hieu4tuoi.common.CommonUtils;
 import vn.hieu4tuoi.common.OrderStatus;
+import vn.hieu4tuoi.common.PaymentStatus;
 import vn.hieu4tuoi.common.ProductItemStatus;
 import vn.hieu4tuoi.common.StringUtils;
 import vn.hieu4tuoi.dto.request.order.OrderRequest;
 import vn.hieu4tuoi.dto.request.order.ProductItemImeiRequest;
 import vn.hieu4tuoi.dto.request.order.UpdateOrderStatusRequest;
 import vn.hieu4tuoi.dto.respone.PageResponse;
-import vn.hieu4tuoi.dto.respone.order.CustomerOrderResponse;
+import vn.hieu4tuoi.dto.respone.order.CustomerOrderAdminResponse;
 import vn.hieu4tuoi.dto.respone.order.OrderDetailResponse;
 import vn.hieu4tuoi.dto.respone.order.OrderResponse;
+import vn.hieu4tuoi.dto.respone.order.OrderAdminResponse;
 import vn.hieu4tuoi.dto.respone.order.ProductOrderDetailResponse;
 import vn.hieu4tuoi.dto.respone.order.ProductOrderResponse;
+import vn.hieu4tuoi.dto.respone.order.ProductOrderAdminResponse;
 import vn.hieu4tuoi.exception.BadRequestException;
 import vn.hieu4tuoi.exception.ResourceNotFoundException;
 import vn.hieu4tuoi.exception.UnauthorizedException;
@@ -40,6 +41,7 @@ import org.springframework.transaction.annotation.Transactional;
 import vn.hieu4tuoi.repository.OrderRepository;
 import vn.hieu4tuoi.mapper.OrderMapper;
 import vn.hieu4tuoi.model.CartItem;
+import vn.hieu4tuoi.model.Image;
 import vn.hieu4tuoi.model.Order;
 import vn.hieu4tuoi.model.OrderItem;
 import vn.hieu4tuoi.model.Product;
@@ -56,6 +58,7 @@ import vn.hieu4tuoi.repository.ProductVersionRepository;
 import vn.hieu4tuoi.repository.PromotionRepository;
 import vn.hieu4tuoi.repository.UserRepository;
 import vn.hieu4tuoi.repository.ProductRepository;
+import vn.hieu4tuoi.repository.ImageRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -70,6 +73,7 @@ public class OrderServiceImpl implements OrderService {
         private final ProductRepository productRepository;
         private final ProductItemRepository productItemRepository;
         private final UserRepository userRepository;
+        private final ImageRepository imageRepository;
 
         @Override
         @Transactional
@@ -179,7 +183,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         @Override
-        public PageResponse<List<OrderResponse>> getOrderList(int page, int size, String sort, String keyword,
+        public PageResponse<List<OrderAdminResponse>> getOrderList(int page, int size, String sort, String keyword,
                         OrderStatus status) {
                 // Build pageable với sắp xếp
                 Pageable pageable = CommonUtils.createPageable(page, size, sort);
@@ -226,15 +230,15 @@ public class OrderServiceImpl implements OrderService {
                                 .collect(Collectors.toMap(User::getId, Function.identity()));
 
                 // set thông tin order và sản phẩm, customer
-                List<OrderResponse> orderResponseList = new ArrayList<>();
+                List<OrderAdminResponse> orderResponseList = new ArrayList<>();
                 for (Order order : orderPage.getContent()) {
-                        OrderResponse orderResponse = orderMapper.entityToResponse(order);
+                        OrderAdminResponse orderResponse = orderMapper.entityToResponse(order);
                         // get list order item của order
                         List<OrderItem> orderItemsOrder = orderItemMap.get(order.getId());
                         // set thông tin sản phẩm và tính tổng tiền kèm số lượng từng sản phẩm
                         // List<ProductOrderResponse> productOrderResponseList = new ArrayList<>();
                         // Map<String, Integer> productQuantityMap = new HashMap<>();
-                        Map<String, ProductOrderResponse> productOrderResponseMap = new HashMap<>();
+                        Map<String, ProductOrderAdminResponse> productOrderResponseMap = new HashMap<>();
                         long totalPrice = 0;
                         for (OrderItem orderItem : orderItemsOrder) {
                                 ProductColorVersion productColorVersion = productColorVersionMap
@@ -242,7 +246,7 @@ public class OrderServiceImpl implements OrderService {
                                 ProductVersion productVersion = productVersionMap
                                                 .get(productColorVersion.getProductVersionId());
                                 Product product = productMap.get(productVersion.getProductId());
-                                ProductOrderResponse productOrderResponse = new ProductOrderResponse();
+                                ProductOrderAdminResponse productOrderResponse = new ProductOrderAdminResponse();
                                 productOrderResponse.setOrderItemId(orderItem.getId());
                                 productOrderResponse.setProductName(product.getName());
                                 productOrderResponse.setProductVersionName(productVersion.getName());
@@ -264,7 +268,7 @@ public class OrderServiceImpl implements OrderService {
                         }
                         // set thông tin customer
                         User customer = customerMap.get(order.getUserId());
-                        CustomerOrderResponse customerOrderResponse = new CustomerOrderResponse();
+                        CustomerOrderAdminResponse customerOrderResponse = new CustomerOrderAdminResponse();
                         customerOrderResponse.setId(customer.getId());
                         customerOrderResponse.setName(customer.getFullName());
                         customerOrderResponse.setPhoneNumber(customer.getPhoneNumber());
@@ -273,12 +277,109 @@ public class OrderServiceImpl implements OrderService {
                         orderResponse.setTotalPrice(totalPrice);
                         orderResponseList.add(orderResponse);
                 }
-                return PageResponse.<List<OrderResponse>>builder()
+                return PageResponse.<List<OrderAdminResponse>>builder()
                                 .pageNo(orderPage.getNumber())
                                 .pageSize(orderPage.getSize())
                                 .totalPage(orderPage.getTotalPages())
                                 .items(orderResponseList)
                                 .build();
+        }
+
+        @Override
+        public List<OrderResponse> getOrderListByCurrentUser() {
+                String userId = SecurityUtils.getCurrentUserId();
+                if (userId == null) {
+                        throw new UnauthorizedException("Vui lòng đăng nhập để xem danh sách đơn hàng");
+                }
+                 List<Order> orderList = orderRepository.findAllByUserIdAndIsDeletedOrderByCreatedAtDesc(userId, false);
+ 
+                 // order item
+                 List<String> orderIds = orderList.stream().map(Order::getId).toList();
+                 List<OrderItem> orderItems = orderItemRepository.findByOrderIdInAndIsDeleted(orderIds, false);
+                 Map<String, List<OrderItem>> orderItemMap = orderItems.stream()
+                                 .collect(Collectors.groupingBy(OrderItem::getOrderId));
+ 
+                 // ds product color version
+                 List<String> productColorVersionIds = orderItems.stream()
+                                 .map(OrderItem::getProductColorVersionId)
+                                 .toList();
+                 List<ProductColorVersion> productColorVersions = productColorVersionRepository
+                                 .findAllByIdInAndIsDeleted(productColorVersionIds, false);
+                 Map<String, ProductColorVersion> productColorVersionMap = productColorVersions.stream()
+                                 .collect(Collectors.toMap(ProductColorVersion::getId, Function.identity()));
+ 
+                 // ds product version
+                 List<String> productVersionIds = productColorVersions.stream()
+                                 .map(ProductColorVersion::getProductVersionId)
+                                 .toList();
+                 List<ProductVersion> productVersions = productVersionRepository
+                                 .findAllByIdInAndIsDeleted(productVersionIds, false);
+                 Map<String, ProductVersion> productVersionMap = productVersions.stream()
+                                 .collect(Collectors.toMap(ProductVersion::getId, Function.identity()));
+ 
+                 // ds product
+                 List<String> productIds = productVersions.stream()
+                                 .map(ProductVersion::getProductId)
+                                 .toList();
+                 List<Product> products = productRepository.findAllByIdInAndIsDeleted(productIds, false);
+                 Map<String, Product> productMap = products.stream()
+                                 .collect(Collectors.toMap(Product::getId, Function.identity()));
+
+                // ds ảnh mặc định
+                List<Image> imageList = imageRepository.findAllByIsDefaultAndProductIdInAndIsDeleted(true, productIds, false);
+                Map<String, String> imageMap = imageList.stream()
+                                .collect(Collectors.toMap(Image::getProductId, Image::getUrl));
+ 
+                 //  customer
+                 User customer = userRepository.findByIdAndIsDeleted(userId, false);
+ 
+                 // set thông tin order và sản phẩm, customer
+                 List<OrderResponse> orderResponseList = new ArrayList<>();
+                 for (Order order : orderList) {
+                         OrderResponse orderResponse = new OrderResponse();
+                         orderResponse.setId(order.getId());
+                         orderResponse.setStatus(order.getStatus());
+                         orderResponse.setPaymentMethod(order.getPaymentMethod());
+                         orderResponse.setPaymentStatus(order.getPaymentStatus());
+                         orderResponse.setNote(order.getNote());
+                         orderResponse.setAddress(order.getAddress());
+                         orderResponse.setPhoneNumber(customer.getPhoneNumber());
+                         orderResponse.setCreatedAt(order.getCreatedAt());
+                         orderResponse.setModifiedAt(order.getModifiedAt());
+                         // get list order item của order
+                         List<OrderItem> orderItemsOrder = orderItemMap.get(order.getId());
+                         List<ProductOrderResponse> productOrderResponseList = new ArrayList<>();
+                         // Map<String, Integer> productQuantityMap = new HashMap<>();
+                         long totalPrice = 0;
+                         for (OrderItem orderItem : orderItemsOrder) {
+                                 ProductColorVersion productColorVersion = productColorVersionMap
+                                                 .get(orderItem.getProductColorVersionId());
+                                 ProductVersion productVersion = productVersionMap
+                                                 .get(productColorVersion.getProductVersionId());
+                                 Product product = productMap.get(productVersion.getProductId());
+                                 ProductOrderResponse productOrderResponse = new ProductOrderResponse();
+                                 productOrderResponse.setOrderItemId(orderItem.getId());
+                                 productOrderResponse.setProductName(product.getName());
+                                 productOrderResponse.setProductVersionName(productVersion.getName());
+                                 productOrderResponse.setColorName(productColorVersion.getColor());
+                                 productOrderResponse.setPrice(orderItem.getDiscountedPrice());
+                                 productOrderResponse.setImeiOrSerial(orderItem.getProductItemId());
+                                 productOrderResponse.setImageUrl(imageMap.get(productVersion.getProductId()));
+                                 productOrderResponse.setSlug(productVersion.getSlug());
+                                 totalPrice += orderItem.getDiscountedPrice();
+                                  productOrderResponseList.add(productOrderResponse);
+                         }
+                         // set thông tin customer
+                         CustomerOrderAdminResponse customerOrderResponse = new CustomerOrderAdminResponse();
+                         customerOrderResponse.setId(customer.getId());
+                         customerOrderResponse.setName(customer.getFullName());
+                         customerOrderResponse.setPhoneNumber(customer.getPhoneNumber());
+                        //  orderResponse.setCustomer(customerOrderResponse);
+                         orderResponse.setProducts(productOrderResponseList);;
+                         orderResponse.setTotalPrice(totalPrice);
+                         orderResponseList.add(orderResponse);
+                 }
+                 return orderResponseList;
         }
 
         @Override
@@ -324,7 +425,7 @@ public class OrderServiceImpl implements OrderService {
 
                 // customer
                 User customer = userRepository.findByIdAndIsDeleted(order.getUserId(), false);
-                CustomerOrderResponse customerOrderResponse = new CustomerOrderResponse();
+                CustomerOrderAdminResponse customerOrderResponse = new CustomerOrderAdminResponse();
                 customerOrderResponse.setId(customer.getId());
                 customerOrderResponse.setName(customer.getFullName());
                 customerOrderResponse.setPhoneNumber(customer.getPhoneNumber());
@@ -451,6 +552,7 @@ public class OrderServiceImpl implements OrderService {
                 if (request.getStatus() == OrderStatus.DELIVERED) {
                         if (order.getStatus() == OrderStatus.SHIPPING) {
                                 order.setStatus(OrderStatus.DELIVERED);
+                                order.setPaymentStatus(PaymentStatus.PAID);
                                 //get ds product item của order
                                 List<OrderItem> orderItems = orderItemRepository.findByOrderIdAndIsDeleted(order.getId(), false);
                                 List<String> productItemIds = orderItems.stream().map(OrderItem::getProductItemId).toList();
@@ -525,4 +627,6 @@ public class OrderServiceImpl implements OrderService {
                         }
                 }
         }
+
+        
 }

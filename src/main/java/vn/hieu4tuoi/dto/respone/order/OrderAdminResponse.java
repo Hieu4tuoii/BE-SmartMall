@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
 import vn.hieu4tuoi.common.OrderStatus;
 import vn.hieu4tuoi.common.PaymentMethod;
 import vn.hieu4tuoi.common.PaymentStatus;
@@ -15,17 +16,14 @@ import vn.hieu4tuoi.common.PaymentStatus;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class OrderDetailResponse {
+public class OrderAdminResponse {
     private String id;
     private OrderStatus status;
     private PaymentMethod paymentMethod;
     private PaymentStatus paymentStatus;
     private Long totalPrice;
-    private String note;
-    private String address;
-    private String phoneNumber;
     private CustomerOrderAdminResponse customer;
-    private List<ProductOrderDetailResponse> products;
+    private List<ProductOrderAdminResponse> products;
     private LocalDateTime createdAt;
     private LocalDateTime modifiedAt;
 }
