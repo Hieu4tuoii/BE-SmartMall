@@ -26,13 +26,13 @@ public class ReviewController {
     private final ReviewService reviewService;
 
     
-    @PostMapping("/public/create")
+    @PostMapping("/create")
     public ResponseData<?> create(@RequestBody @Valid ReviewCreationRequest request) {
         return new ResponseData<>(HttpStatus.OK.value(), "Đánh giá thành công", reviewService.createReview(request));
     }
 
     @GetMapping("/public/list/{productVersionId}")
-    public ResponseData<?> findAllByProductVersionId(@PathVariable String productVersionId, @RequestParam int page, @RequestParam int size, @RequestParam String sort) {
+    public ResponseData<?> findAllByProductVersionId(@PathVariable String productVersionId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size, @RequestParam(required = false)  String sort) {
         return new ResponseData<>(HttpStatus.OK.value(), "Lấy danh sách đánh giá thành công", reviewService.findAllByProductVersionId(productVersionId, page, size, sort));
     }
 }

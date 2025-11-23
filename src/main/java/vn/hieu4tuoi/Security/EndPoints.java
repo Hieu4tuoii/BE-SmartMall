@@ -19,6 +19,7 @@ public class EndPoints {
             "/upload/images/**",
             "/banner/public/**",
             "/product/public/**",
+            "/review/public/**",
             "/cart/count",
     };
     public static final String[] PUBLIC_POST_ENDPOINTS = {

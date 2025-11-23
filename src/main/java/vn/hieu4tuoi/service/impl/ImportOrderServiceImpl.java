@@ -116,7 +116,6 @@ public class ImportOrderServiceImpl implements ImportOrderService {
             response.setId(importOrder.getId());
             response.setCreatedAt(importOrder.getCreatedAt());
             response.setModifiedAt(importOrder.getModifiedAt());
-            //set tên nhà cung cấp
             response.setSupplierName(supplierIdNameMap.get(importOrder.getSupplierId()));
             response.setTotalImportPrice(importOrder.getTotalImportPrice());
             return response;
