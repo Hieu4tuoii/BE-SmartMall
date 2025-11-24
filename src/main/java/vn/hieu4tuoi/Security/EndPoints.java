@@ -36,6 +36,7 @@ public class EndPoints {
 
     public static final String[] CUSTOMER_GET_ENDPOINTS = {
         "/order/list/current-user",
+        "/api/bank/check/**",
     };
 
     public static final String[] ADMIN_GET_ENDPOINTS = {

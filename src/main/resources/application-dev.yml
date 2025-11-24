@@ -19,7 +19,7 @@ spring:
     host: smtp.gmail.com
     port: 587
     username: vipnro121@gmail.com
-    password: ${MAIL_PASSWORD:your-app-password-here}
+    password: ${MAIL_PASSWORD:password}
     properties:
       mail:
         smtp:
@@ -50,3 +50,7 @@ fe:
 
 file:
   upload-dir: ./uploads
+bank:
+  api:
+    account-number: ${BANK_API_ACCOUNT_NUMBER:account-number}
+    bearer: ${BANK_API_BEARER:bearer-token}
