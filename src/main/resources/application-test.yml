@@ -24,3 +24,6 @@ openapi:
     server: ${BACKEND_SERVICE:http://localhost:${server.port}}
     title: Backend service
     version: 1.0.0
+rag:
+  api:
+    base-url: ${RAG_API_BASE_URL:http://localhost:8000}

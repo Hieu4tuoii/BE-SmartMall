@@ -54,3 +54,6 @@ bank:
   api:
     account-number: ${BANK_API_ACCOUNT_NUMBER:account-number}
     bearer: ${BANK_API_BEARER:bearer-token}
+rag:
+  api:
+    base-url: ${RAG_API_BASE_URL:http://localhost:8000}

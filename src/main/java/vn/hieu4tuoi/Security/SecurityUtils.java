@@ -36,10 +36,10 @@ public class SecurityUtils {
      * Lấy email của user hiện tại
      * @return Email của user, hoặc null nếu chưa đăng nhập
      */
-    public static String getCurrentUserEmail() {
-        CustomUserDetails user = getCurrentUser();
-        return user != null ? user.getEmail() : null;
-    }
+    // public static String getCurrentUserEmail() {
+    //     CustomUserDetails user = getCurrentUser();
+    //     return user != null ? user.getEmail() : null;
+    // }
 
     /**
      * Lấy tên đầy đủ của user hiện tại
@@ -54,43 +54,43 @@ public class SecurityUtils {
      * Lấy số điện thoại của user hiện tại
      * @return Số điện thoại của user, hoặc null nếu chưa đăng nhập
      */
-    public static String getCurrentUserPhoneNumber() {
-        CustomUserDetails user = getCurrentUser();
-        return user != null ? user.getPhoneNumber() : null;
-    }
+    // public static String getCurrentUserPhoneNumber() {
+    //     CustomUserDetails user = getCurrentUser();
+    //     return user != null ? user.getPhoneNumber() : null;
+    // }
 
-    /**
-     * Lấy địa chỉ của user hiện tại
-     * @return Địa chỉ của user, hoặc null nếu chưa đăng nhập
-     */
-    public static String getCurrentUserAddress() {
-        CustomUserDetails user = getCurrentUser();
-        return user != null ? user.getAddress() : null;
-    }
+    // /**
+    //  * Lấy địa chỉ của user hiện tại
+    //  * @return Địa chỉ của user, hoặc null nếu chưa đăng nhập
+    //  */
+    // public static String getCurrentUserAddress() {
+    //     CustomUserDetails user = getCurrentUser();
+    //     return user != null ? user.getAddress() : null;
+    // }
 
-    /**
-     * Lấy trạng thái của user hiện tại
-     * @return Trạng thái của user, hoặc null nếu chưa đăng nhập
-     */
-    public static UserStatus getCurrentUserStatus() {
-        CustomUserDetails user = getCurrentUser();
-        return user != null ? user.getStatus() : null;
-    }
+    // /**
+    //  * Lấy trạng thái của user hiện tại
+    //  * @return Trạng thái của user, hoặc null nếu chưa đăng nhập
+    //  */
+    // public static UserStatus getCurrentUserStatus() {
+    //     CustomUserDetails user = getCurrentUser();
+    //     return user != null ? user.getStatus() : null;
+    // }
 
-    /**
-     * Kiểm tra xem user hiện tại có đang đăng nhập không
-     * @return true nếu đã đăng nhập, false nếu chưa
-     */
-    public static boolean isAuthenticated() {
-        return getCurrentUser() != null;
-    }
+    // /**
+    //  * Kiểm tra xem user hiện tại có đang đăng nhập không
+    //  * @return true nếu đã đăng nhập, false nếu chưa
+    //  */
+    // public static boolean isAuthenticated() {
+    //     return getCurrentUser() != null;
+    // }
 
-    /**
-     * Lấy username (email) của user hiện tại dưới dạng Optional
-     * @return Optional chứa username, hoặc empty nếu chưa đăng nhập
-     */
-    public static Optional<String> getCurrentUsername() {
-        return Optional.ofNullable(getCurrentUserEmail());
-    }
+    // /**
+    //  * Lấy username (email) của user hiện tại dưới dạng Optional
+    //  * @return Optional chứa username, hoặc empty nếu chưa đăng nhập
+    //  */
+    // public static Optional<String> getCurrentUsername() {
+    //     return Optional.ofNullable(getCurrentUserEmail());
+    // }
 }
 

@@ -14,15 +14,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import vn.hieu4tuoi.dto.request.hybrid.HybridRagSearchRequest;
 import vn.hieu4tuoi.dto.request.product.ProductColorVersionRequest;
 import vn.hieu4tuoi.dto.request.product.ProductCreateRequest;
 import vn.hieu4tuoi.dto.request.product.ProductVersionRequest;
 import vn.hieu4tuoi.dto.request.product.ProductVersionUpdateRequest;
 import vn.hieu4tuoi.dto.respone.ResponseData;
 import vn.hieu4tuoi.common.ProductItemStatus;
+import vn.hieu4tuoi.service.HybridRagService;
 import vn.hieu4tuoi.service.ProductService;
 
 @RestController
@@ -32,6 +35,7 @@ import vn.hieu4tuoi.service.ProductService;
 @Validated
 public class ProductController {
     private final ProductService productService;
+    private final HybridRagService hybridRagService;
 
     @PostMapping
     public ResponseData<String> create(@RequestBody @Valid ProductCreateRequest request) {
@@ -87,6 +91,19 @@ public class ProductController {
         return new ResponseData<>(HttpStatus.OK.value(), "Tim kiem sản phẩm thành công",
                 productService.searchPublicProductVersion(brandIds, categoryIds, hasPromotion, minPrice, maxPrice,
                         keyword, page, size, sort));
+    }
+
+    /**
+     * API tìm kiếm sản phẩm sử dụng Hybrid RAG với các filter tùy chọn
+     * 
+     * @param request Request chứa query và các filter (minPrice, maxPrice, categoryId, brandId)
+     * @return Danh sách kết quả tìm kiếm từ Hybrid RAG
+     */
+    @PostMapping("/public/hybrid-rag/search")
+    @Operation(summary = "Tìm kiếm sản phẩm bằng Hybrid RAG")
+    public ResponseData<?> searchWithHybridRag(@RequestBody @Valid HybridRagSearchRequest request) {
+        return new ResponseData<>(HttpStatus.OK.value(), "Tìm kiếm sản phẩm bằng Hybrid RAG thành công",
+                hybridRagService.searchProducts(request));
     }
 
     @GetMapping("/public/version/{slug}")

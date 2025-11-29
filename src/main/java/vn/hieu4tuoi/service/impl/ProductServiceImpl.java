@@ -60,6 +60,7 @@ import vn.hieu4tuoi.repository.ProductItemRepository;
 import vn.hieu4tuoi.repository.ProductRepository;
 import vn.hieu4tuoi.repository.ProductVersionRepository;
 import vn.hieu4tuoi.repository.PromotionRepository;
+import vn.hieu4tuoi.service.HybridRagService;
 import vn.hieu4tuoi.service.ProductService;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -81,6 +82,7 @@ public class ProductServiceImpl implements ProductService {
     private final CategoryMapper categoryMapper;
     private final ProductItemRepository productItemRepository;
     private final ProductItemMapper productItemMapper;
+    private final HybridRagService hybridRagService;
     @Override
     @Transactional
     public String create(ProductCreateRequest request) {
@@ -242,6 +244,7 @@ public class ProductServiceImpl implements ProductService {
         productVersion.setFullTextSearch(toFullTextSearch(((product.getName() != null ? product.getName() : "") + " "
                 + (request.getName() != null ? request.getName() : "")).trim()));
         productVersion = productVersionRepository.save(productVersion);
+        hybridRagService.syncProductVersion(product, productVersion);
         return productVersion.getId();
     }
 

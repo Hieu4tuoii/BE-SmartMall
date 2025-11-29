@@ -18,3 +18,6 @@ springdoc:
     enabled: false
   swagger-ui:
     enabled: false
+rag:
+  api:
+    base-url: ${RAG_API_BASE_URL:http://localhost:8000}
