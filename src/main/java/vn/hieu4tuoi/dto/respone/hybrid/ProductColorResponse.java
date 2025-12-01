@@ -1,8 +1,5 @@
 package vn.hieu4tuoi.dto.respone.hybrid;
 
-import java.util.List;
-import java.util.Map;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,13 +12,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class HybridRagSearchResponse {
+public class ProductColorResponse {
     private String id;
     private String name;
-    private String description;
-    private Long price;
-    // private Map<String, Object> metadata;
-    // private Double score;
-    private List<ProductColorResponse> colors;
 }
-

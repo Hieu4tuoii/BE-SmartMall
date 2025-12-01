@@ -415,6 +415,22 @@ public class ProductServiceImpl implements ProductService {
                 .build();
     }
 
+    @Override
+    public List<ProductVersionResponse> searchPublicProductVersionByIds(List<String> productVersionIds) {
+
+        // Kiểm tra danh sách IDs không được null hoặc rỗng
+        if (productVersionIds == null || productVersionIds.isEmpty()) {
+            return List.of();
+        }
+
+        // Tìm kiếm theo danh sách IDs
+        List<ProductVersion> productVersions = productVersionRepository.searchProductVersionByIdsList(
+                productVersionIds);
+
+        // làm giàu thông tin cho product version response (image, product name, promotion, danh sách màu sắc)
+        return enrichProductVersionResponses(productVersions);
+    }
+
     //lấy ds product version liên quan theo product version id
     @Override
     public List<ProductVersionResponse> getRelatedProductVersions(String productVersionSlug) {
@@ -535,7 +551,7 @@ public class ProductServiceImpl implements ProductService {
 
     /**
      * Làm giàu thông tin cho danh sách ProductVersionResponse
-     * Bao gồm: image url default, tên đầy đủ (product name + version name), và promotion
+     * Bao gồm: image url default, tên đầy đủ (product name + version name), promotion và danh sách màu sắc
      * 
      * @param productVersions Danh sách ProductVersion cần xử lý
      * @return Danh sách ProductVersionResponse đã được làm giàu thông tin
@@ -571,7 +587,26 @@ public class ProductServiceImpl implements ProductService {
         Map<String, Promotion> promotionMap = promotions.stream()
                 .collect(Collectors.toMap(Promotion::getId, p -> p));
 
-        //set image url và promotion cho product version response
+        //list productVersionId để lấy danh sách màu sắc
+        List<String> productVersionIds = productVersions.stream()
+                .map(ProductVersion::getId)
+                .toList();
+        
+        //lấy danh sách màu sắc của tất cả product version
+        List<ProductColorVersion> colorVersions = productColorVersionRepository
+                .findByProductVersionIdInAndIsDeletedOrderByCreatedAtAsc(productVersionIds, false);
+        
+        //group màu sắc theo productVersionId
+        Map<String, List<ProductColorVersionResponse>> colorVersionMap = colorVersions.stream()
+                .collect(Collectors.groupingBy(
+                        ProductColorVersion::getProductVersionId,
+                        Collectors.mapping(
+                                productColorVersionMapper::entityToResponse,
+                                Collectors.toList()
+                        )
+                ));
+
+        //set image url, promotion và danh sách màu sắc cho product version response
         return productVersions.stream().map(productVersion -> {
             ProductVersionResponse response = productVersionMapper.entityToPublicResponse(productVersion);
             response.setImageUrl(imageMap.get(productVersion.getProductId()));
@@ -583,6 +618,12 @@ public class ProductServiceImpl implements ProductService {
             if (product != null) {
                 response.setName(product.getName() + " " + productVersion.getName());
             }
+            
+            //set danh sách màu sắc
+            List<ProductColorVersionResponse> colorVersionsForThisVersion = colorVersionMap.getOrDefault(
+                    productVersion.getId(), List.of());
+            response.setProductColorVersions(colorVersionsForThisVersion);
+            
             return response;
         }).toList();
     }

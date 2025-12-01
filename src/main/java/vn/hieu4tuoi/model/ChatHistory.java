@@ -36,6 +36,7 @@ public class ChatHistory {
     @Temporal(TemporalType.TIMESTAMP)
     @CreationTimestamp
     private LocalDateTime createdAt;
+    private Boolean hidden;
 
     public void addToolCall(ToolCall toolCall) {
         if (toolCalls == null) {

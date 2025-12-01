@@ -23,8 +23,11 @@ import lombok.extern.slf4j.Slf4j;
 import vn.hieu4tuoi.dto.request.hybrid.HybridRagProductRequest;
 import vn.hieu4tuoi.dto.request.hybrid.HybridRagSearchRequest;
 import vn.hieu4tuoi.dto.respone.hybrid.HybridRagSearchResponse;
+import vn.hieu4tuoi.dto.respone.hybrid.ProductColorResponse;
 import vn.hieu4tuoi.model.Product;
+import vn.hieu4tuoi.model.ProductColorVersion;
 import vn.hieu4tuoi.model.ProductVersion;
+import vn.hieu4tuoi.repository.ProductColorVersionRepository;
 import vn.hieu4tuoi.service.HybridRagService;
 
 @Slf4j
@@ -40,6 +43,8 @@ public class HybridRagServiceImpl implements HybridRagService {
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
+
+    private final ProductColorVersionRepository productColorVersionRepository;
 
     @Override
     public void syncProductVersion(Product product, ProductVersion productVersion) {
@@ -137,16 +142,45 @@ public class HybridRagServiceImpl implements HybridRagService {
      */
     @SuppressWarnings("unchecked")
     private List<HybridRagSearchResponse> mapToSearchResponse(List<Map<String, Object>> rawResponse) {
+
+        List<String> ids = new ArrayList<>();
+        for (Map<String, Object> item : rawResponse) {
+            Map<String, Object> metadata = (Map<String, Object>) item.get("metadata");
+            ids.add((String) metadata.get("_id"));
+        }
+        List<ProductColorVersion> productColorVersions = productColorVersionRepository.findAllByProductVersionIdInAndIsDeletedFalse(ids);
         return rawResponse.stream().map(item -> {
             HybridRagSearchResponse response = new HybridRagSearchResponse();
             response.setName((String) item.get("name"));
             response.setDescription((String) item.get("description"));
-            response.setMetadata((Map<String, Object>) item.get("metadata"));
-
-            // Xử lý score có thể là Double hoặc Number
-            Object scoreObj = item.get("score");
-            if (scoreObj != null) {
-                response.setScore((Double) scoreObj);
+            // response.setMetadata((Map<String, Object>) item.get("metadata"));
+            Map<String, Object> metadata = (Map<String, Object>) item.get("metadata");
+            // Xử lý price có thể là Integer hoặc Long
+            Object priceObj = metadata.get("price");
+            if (priceObj != null) {
+                if (priceObj instanceof Integer) {
+                    response.setPrice(((Integer) priceObj).longValue());
+                } else if (priceObj instanceof Long) {
+                    response.setPrice((Long) priceObj);
+                } else if (priceObj instanceof Number) {
+                    response.setPrice(((Number) priceObj).longValue());
+                }
+            }
+            response.setId((String) metadata.get("_id"));
+            // Khởi tạo list colors để tránh NullPointerException
+            response.setColors(new ArrayList<>());
+            // // Xử lý score có thể là Double hoặc Number
+            // Object scoreObj = item.get("score");
+            // if (scoreObj != null) {
+            //     response.setScore((Double) scoreObj);
+            // }
+            for (ProductColorVersion productColorVersion : productColorVersions) {
+                if (productColorVersion.getProductVersionId().equals(response.getId())) {
+                    ProductColorResponse productColorResponse = new ProductColorResponse();
+                    productColorResponse.setId(productColorVersion.getId());
+                    productColorResponse.setName(productColorVersion.getColor());
+                    response.getColors().add(productColorResponse);
+                }
             }
 
             return response;
@@ -170,7 +204,7 @@ public class HybridRagServiceImpl implements HybridRagService {
             if (builder.length() > 0) {
                 builder.append(System.lineSeparator());
             }
-            builder.append(formattedSpecs);
+            builder.append("Thông số: " + formattedSpecs);
         }
         return builder.length() > 0 ? builder.toString().replaceAll("\r\n", ". ").trim() : product.getName();
     }

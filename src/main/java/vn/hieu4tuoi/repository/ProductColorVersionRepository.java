@@ -9,4 +9,5 @@ public interface ProductColorVersionRepository extends JpaRepository<ProductColo
     List<ProductColorVersion> findByProductVersionIdAndIsDeletedOrderByCreatedAtAsc(String productVersionId, Boolean isDeleted);
     List<ProductColorVersion> findByProductVersionIdInAndIsDeletedOrderByCreatedAtAsc(List<String> productVersionIds, Boolean isDeleted);
     List<ProductColorVersion> findAllByIdInAndIsDeleted(List<String> ids, Boolean isDeleted);
+    List<ProductColorVersion> findAllByProductVersionIdInAndIsDeletedFalse(List<String> productVersionIds);
 }

@@ -31,6 +31,7 @@ public interface ProductService {
     void updateColorVersion(String id, ProductColorVersionRequest request);
     void deleteColorVersion(String id);
     PageResponse<List<ProductVersionResponse>> searchPublicProductVersion(List<String> brandIds, List<String> categoryIds, Boolean hasPromotion, Long minPrice, Long maxPrice, String keyword, int page, int size, String sort);
+    List<ProductVersionResponse> searchPublicProductVersionByIds(List<String> productVersionIds);
     ProductVersionDetailResponse findVersionDetailBySlug(String slug);
 
     //lấy ds phiên bản sản phẩm liên quan
@@ -38,4 +39,6 @@ public interface ProductService {
 
     //ds product item của sản product version color 
     PageResponse<List<ProductItemAdminResponse>> getProductItemsByProductVersionColorId(String productVersionColorId, ProductItemStatus status, int page, int size, String sort, String imeiOrSerial);
+
+    
 }

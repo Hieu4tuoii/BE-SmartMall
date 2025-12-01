@@ -12,7 +12,13 @@ import java.util.List;
 
 @Repository
 public interface ChatHistoryRepository extends JpaRepository<ChatHistory, Long> {
-    Page<ChatHistory> findByCustomerIdAndRoleInAndToolCallsIsEmptyAndToolCallIdIsNullOrderByIdDesc(Long customerId, List<RoleChat> roles, Pageable pageable);
+    Page<ChatHistory> findByUserIdAndHiddenOrderByCreatedAtDesc(String userId, Boolean hidden, Pageable pageable);
 
-    List<ChatHistory> findTop40ByCustomerIdAndCreatedAtBetweenOrderByIdDesc(Long customerId, LocalDateTime startTime, LocalDateTime endTime);
+    List<ChatHistory> findTop40ByUserIdAndCreatedAtBetweenOrderByIdDesc(String userId, LocalDateTime startTime, LocalDateTime endTime);
+
+    /**
+     * Tìm toàn bộ lịch sử chat của một user.
+     * Dùng cho chức năng xóa lịch sử chat để có thể áp dụng cascade/orphanRemoval.
+     */
+    List<ChatHistory> findByUserId(String userId);
 }

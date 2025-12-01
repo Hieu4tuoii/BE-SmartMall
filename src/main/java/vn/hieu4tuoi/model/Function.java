@@ -17,6 +17,7 @@ public class Function {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @JsonIgnore
     private Long id;
+    @Column(name = "arguments", columnDefinition = "TEXT")
     private String arguments;
     private String name;
     // 1-1 đến ToolCall

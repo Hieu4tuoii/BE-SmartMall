@@ -29,4 +29,11 @@ public class ProductVersionResponse {
     private Long discountedPrice;
     private LocalDateTime createdAt;
     private LocalDateTime modifiedAt;
+    //danh sách màu sắc của product version
+    private List<ProductColorVersionResponse> productColorVersions;
+
+    public String toJson() {
+        return String.format("{\"id\":%s,\"name\":\"%s\",\"imageUrl\":\"%s\"}",
+                id, name, imageUrl);
+    }
 }
