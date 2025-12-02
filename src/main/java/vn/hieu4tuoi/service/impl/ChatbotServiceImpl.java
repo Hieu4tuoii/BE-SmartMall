@@ -28,6 +28,7 @@ import vn.hieu4tuoi.dto.request.chatbot.ChatRequest;
 import vn.hieu4tuoi.dto.request.chatbot.ChatbotRequest;
 import vn.hieu4tuoi.dto.request.chatbot.UserChatRequest;
 import vn.hieu4tuoi.dto.request.hybrid.HybridRagSearchRequest;
+import vn.hieu4tuoi.dto.request.order.OrderByAIRequest;
 import vn.hieu4tuoi.dto.respone.chat.AIResponse;
 import vn.hieu4tuoi.dto.respone.hybrid.HybridRagSearchResponse;
 import vn.hieu4tuoi.dto.respone.product.ProductVersionResponse;
@@ -79,12 +80,13 @@ public class ChatbotServiceImpl {
         String userId = user.getId();
 
         String systemPrompt = """
-                        Bạn là một trợ lý chatbot dành cho website bán đồ công nghệ (chỉ bán đồ m). Chỉ trả lời các thông tin liên quan đến sản phẩm.
+                        Bạn là một trợ lý chatbot dành cho website bán đồ công nghệ SmartMall, (chỉ đồ mới gồm: điện thoại, tablet, tai nghe, smartwatch). Chỉ trả lời các thông tin liên quan đến sản phẩm.
 
-                - Nếu khách hàng đặt nhiều hơn 1 sản phẩm, hãy xác nhận lại thông tin tên và số lượng từng sản phẩm trước khi gọi hàm Order.
-                - Nếu khách hàng chỉ đặt 1 sản phẩm (có thể với số lượng lớn), thì không cần xác nhận lại thông tin trước khi gọi hàm Order.
+                Output Verbosity: Giới hạn độ dài câu trả lời tối đa 2 đoạn ngắn hoặc 4 ý gạch đầu dòng, mỗi ý không quá 1 dòng.  Ưu tiên trả lời ngắn gọn nhưng đầy đủ, rõ ràng và dễ hiểu trong phạm vi độ dài đã nêu. Nếu khách hỏi nhiều ý, hãy đảm bảo trả lời trọn vẹn các ý trong giới hạn này.
 
-                Output Verbosity: Giới hạn độ dài câu trả lời tối đa 2 đoạn ngắn hoặc 4 ý gạch đầu dòng, mỗi ý không quá 1 dòng. Ưu tiên trả lời đầy đủ, rõ ràng và dễ hiểu trong phạm vi độ dài đã nêu. Nếu khách hỏi nhiều ý, hãy đảm bảo trả lời trọn vẹn các ý trong giới hạn này.
+                Một số lưu ý cho từng hàm: 
+                - Hàm Product_Consulting: message là tin nhắn tư vấn sẽ được gửi trực tiếp đến khách hàng, tư vấn ngắn gọn, rõ ràng, dễ hiểu dựa trên dữ liệu sản phẩm từ hàm Search_Product và từ nhu cầu của khách hàng.
+                - Hàm Order: không được hỏi số lượng sản phẩm. BẮT BUỘC follow theo quy trình sau: Hỏi màu sắc, số điện thoại, địa chỉ, ghi chú ( nếu có, chỉ hỏi 1 lần ) -> Sau khi có đầy đủ thông tin thì gửi lại thông tin đơn hàng và hỏi phương thức thanh toán để xác nhận đơn hàng-> Sau đó gọi hàm order.
                         """;
 
         // lay ds lich su chat trong ngay cua customer
@@ -218,6 +220,40 @@ public class ChatbotServiceImpl {
                             "done", userId, false);
                         //ngắn chặn open ai sinh ra cầu trả lời thừa sau khi kết thúc hàm Product_Consulting, tự sinh ra tin nhắn thủ công
                         
+                    }
+                    // neu tool la Order - xử lý đặt hàng qua AI
+                    else if (toolName.equals("Order")) {
+                        // Parse arguments từ tool call
+                        String arguments = messageResponseFromAI.getTool_calls().get(0).getFunction().getArguments();
+                        OrderByAIRequest orderByAIRequest = null;
+                        try {
+                            orderByAIRequest = objectMapper.readValue(arguments, OrderByAIRequest.class);
+                        } catch (Exception e) {
+                            log.error("Lỗi khi chuyển đổi arguments Order: {}", e.getMessage());
+                            return handleFunctionCall(messages, req, messageResponseFromAI,
+                                    "Lỗi khi chuyển đổi dữ liệu đặt hàng. Vui lòng thử lại.", userId, true);
+                        }
+                        
+                        // Gọi hàm đặt hàng
+                        String orderResult = orderService.createOrderByAI(orderByAIRequest);
+                        log.info("Kết quả đặt hàng: {}", orderResult);
+                        
+                        // Kiểm tra nếu đặt hàng thành công và là thanh toán chuyển khoản
+                        if (orderResult.contains("Đặt hàng thành công") && orderResult.contains("chuyển khoản")) {
+                            // Tạo QR code cho thanh toán
+                            // Lấy tổng tiền từ kết quả (format: "Tổng tiền: 1,000,000 VNĐ")
+                            String orderId = orderResult.split("Mã đơn hàng: ")[1].split("\\.")[0];
+                            String totalPriceStr = orderResult.split("Tổng tiền: ")[1].split(" VNĐ")[0].replace(",", "");
+                            String qrCodeUrl = String.format(
+                                    "https://qr.sepay.vn/img?acc=%s&bank=%s&amount=%s&des=%s&template=qronly&download=DOWNLOAD",
+                                    accountNumber, bank, totalPriceStr, orderId);
+                            
+                            // Thêm thông tin QR code vào kết quả
+                            String resultWithQR = orderResult + " QR Code thanh toán: " + qrCodeUrl;
+                            return handleFunctionCall(messages, req, messageResponseFromAI, resultWithQR, userId, true);
+                        }
+                        
+                        return handleFunctionCall(messages, req, messageResponseFromAI, orderResult, userId, true);
                     }
                     // //neu ham ham lay ds order
                     // else if (toolName.equals("Get_Order_List")) {

@@ -29,4 +29,14 @@ public interface PromotionRepository extends JpaRepository<Promotion, String> {
     //lấy ds khuyến mãi theo id in và thời gian hiện tại và chưa bị xóa
     @Query("SELECT p FROM Promotion p WHERE p.id IN :ids AND p.startAt <= :now AND p.endAt >= :now AND p.isDeleted = :isDeleted")
     List<Promotion> findAllByIdInAndStartAtLessThanEqualAndEndAtGreaterThanEqual(@Param("ids") List<String> ids, @Param("now") LocalDateTime now, @Param("isDeleted") Boolean isDeleted);
+
+    /**
+     * Tìm promotion theo ID và thời gian hiệu lực (cho AI Order)
+     * @param id ID của promotion
+     * @param now thời gian hiện tại
+     * @param isDeleted trạng thái xóa
+     * @return Promotion nếu đang trong thời gian khuyến mãi
+     */
+    @Query("SELECT p FROM Promotion p WHERE p.id = :id AND p.startAt <= :now AND p.endAt >= :now AND p.isDeleted = :isDeleted")
+    Promotion findByIdAndStartAtLessThanEqualAndEndAtGreaterThanEqual(@Param("id") String id, @Param("now") LocalDateTime now, @Param("isDeleted") Boolean isDeleted);
 }

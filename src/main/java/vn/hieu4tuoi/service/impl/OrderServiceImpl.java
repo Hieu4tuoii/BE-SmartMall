@@ -18,9 +18,11 @@ import vn.hieu4tuoi.service.OrderService;
 import vn.hieu4tuoi.Security.SecurityUtils;
 import vn.hieu4tuoi.common.CommonUtils;
 import vn.hieu4tuoi.common.OrderStatus;
+import vn.hieu4tuoi.common.PaymentMethod;
 import vn.hieu4tuoi.common.PaymentStatus;
 import vn.hieu4tuoi.common.ProductItemStatus;
 import vn.hieu4tuoi.common.StringUtils;
+import vn.hieu4tuoi.dto.request.order.OrderByAIRequest;
 import vn.hieu4tuoi.dto.request.order.OrderRequest;
 import vn.hieu4tuoi.dto.request.order.ProductItemImeiRequest;
 import vn.hieu4tuoi.dto.request.order.UpdateOrderStatusRequest;
@@ -180,6 +182,145 @@ public class OrderServiceImpl implements OrderService {
                 cartItemRepository.saveAll(cartItems);
                 orderItemRepository.saveAll(orderItems);
                 return order.getId();
+        }
+
+        /**
+         * Tạo đơn hàng thông qua AI Chatbot
+         * Nhận thông tin sản phẩm (productColorId, quantity) và thông tin giao hàng từ AI Tool
+         * @param request thông tin đặt hàng từ AI Tool
+         * @return thông báo kết quả đặt hàng
+         */
+        @Override
+        @Transactional
+        public String createOrderByAI(OrderByAIRequest request) {
+                // Lấy thông tin user từ security context
+                String userId = SecurityUtils.getCurrentUserId();
+                String userFullName = SecurityUtils.getCurrentUserFullName();
+                if (userId == null) {
+                        return "Vui lòng đăng nhập để đặt hàng";
+                }
+
+                // Parse số lượng, mặc định là 1
+                int quantity = 1;
+                try {
+                        if (request.getQuantity() != null && !request.getQuantity().isEmpty()) {
+                                quantity = Integer.parseInt(request.getQuantity());
+                        }
+                } catch (NumberFormatException e) {
+                        return "Số lượng sản phẩm không hợp lệ";
+                }
+                if (quantity <= 0) {
+                        return "Số lượng sản phẩm phải lớn hơn 0";
+                }
+
+                // Lấy ProductColorVersion từ productColorId
+                ProductColorVersion productColorVersion = productColorVersionRepository
+                                .findByIdAndIsDeleted(request.getProductColorId(), false);
+                if (productColorVersion == null) {
+                        return "Sản phẩm không tồn tại hoặc đã ngừng kinh doanh";
+                }
+
+                // Kiểm tra số lượng tồn kho
+                if (quantity > productColorVersion.getTotalStock().intValue()) {
+                        return "Số lượng sản phẩm trong kho không đủ. Hiện tại chỉ còn " 
+                                        + productColorVersion.getTotalStock() + " sản phẩm";
+                }
+
+                // Lấy ProductVersion để tính giá
+                ProductVersion productVersion = productVersionRepository
+                                .findByIdAndIsDeleted(productColorVersion.getProductVersionId(), false);
+                if (productVersion == null) {
+                        return "Phiên bản sản phẩm không tồn tại";
+                }
+
+                // Lấy Product để lấy tên sản phẩm
+                Product product = productRepository.findByIdAndIsDeleted(productVersion.getProductId(), false);
+                if (product == null) {
+                        return "Sản phẩm không tồn tại";
+                }
+
+                // Tính giá sau khuyến mãi
+                long discountedPrice = productVersion.getPrice();
+                Promotion promotion = null;
+                if (productVersion.getPromotionId() != null) {
+                        promotion = promotionRepository.findByIdAndStartAtLessThanEqualAndEndAtGreaterThanEqual(
+                                        productVersion.getPromotionId(), LocalDateTime.now(), false);
+                }
+                if (promotion != null) {
+                        double discountPercent = promotion.getDiscount();
+                        double discountAmount = productVersion.getPrice() * discountPercent / 100;
+                        if (discountAmount > promotion.getMaximumDiscountAmount()) {
+                                discountAmount = promotion.getMaximumDiscountAmount();
+                        }
+                        discountedPrice = (long) Math.round((productVersion.getPrice() - discountAmount) / 1000.0) * 1000;
+                }
+
+                // Parse payment method
+                PaymentMethod paymentMethod;
+                String paymentMethodStr = request.getPaymentMethod();
+                if (paymentMethodStr == null || paymentMethodStr.isEmpty()) {
+                        return "Vui lòng chọn phương thức thanh toán";
+                }
+                if (paymentMethodStr.equalsIgnoreCase("cash") || paymentMethodStr.equalsIgnoreCase("tiền mặt")) {
+                        paymentMethod = PaymentMethod.CASH;
+                } else if (paymentMethodStr.equalsIgnoreCase("bank") || paymentMethodStr.equalsIgnoreCase("chuyển khoản")) {
+                        paymentMethod = PaymentMethod.BANK_TRANSFER;
+                } else {
+                        return "Phương thức thanh toán không hợp lệ. Vui lòng chọn 'cash' (tiền mặt) hoặc 'bank' (chuyển khoản)";
+                }
+
+                // Tạo Order
+                Order order = new Order();
+                order.setUserId(userId);
+                order.setPhoneNumber(request.getPhoneNumber());
+                order.setAddress(request.getAddress());
+                order.setNote(request.getNote() != null ? request.getNote() : "");
+                order.setPaymentMethod(paymentMethod);
+                order.setStatus(OrderStatus.PENDING);
+                order.setPaymentStatus(PaymentStatus.UNPAID);
+                order.setFullTextSearch(StringUtils.toFullTextSearch(userFullName + " " + order.getPhoneNumber()));
+                orderRepository.save(order);
+
+                // Tạo OrderItems
+                List<OrderItem> orderItems = new ArrayList<>();
+                for (int i = 0; i < quantity; i++) {
+                        OrderItem orderItem = new OrderItem();
+                        orderItem.setOrderId(order.getId());
+                        orderItem.setPrice(productVersion.getPrice());
+                        orderItem.setDiscountedPrice(discountedPrice);
+                        orderItem.setProductColorVersionId(productColorVersion.getId());
+                        orderItems.add(orderItem);
+                }
+                orderItemRepository.saveAll(orderItems);
+
+                // Cập nhật số lượng tồn kho và đã bán
+                productColorVersion.setTotalStock(productColorVersion.getTotalStock() - quantity);
+                productColorVersion.setTotalSold(productColorVersion.getTotalSold() + quantity);
+                productVersion.setTotalSold(productVersion.getTotalSold() + quantity);
+                productVersionRepository.save(productVersion);
+                productColorVersionRepository.save(productColorVersion);
+
+                // Tính tổng tiền
+                long totalPrice = discountedPrice * quantity;
+
+                // Tạo thông báo kết quả
+                StringBuilder result = new StringBuilder();
+                result.append("Đặt hàng thành công! ");
+                result.append("Mã đơn hàng: ").append(order.getId()).append(". ");
+                result.append("Sản phẩm: ").append(product.getName()).append(" - ");
+                result.append(productVersion.getName()).append(" - ");
+                result.append("Màu ").append(productColorVersion.getColor()).append(". ");
+                result.append("Số lượng: ").append(quantity).append(". ");
+                result.append("Tổng tiền: ").append(String.format("%,d", totalPrice)).append(" VNĐ. ");
+                result.append("Địa chỉ giao hàng: ").append(request.getAddress()).append(". ");
+                result.append("Số điện thoại: ").append(request.getPhoneNumber()).append(". ");
+                if (paymentMethod == PaymentMethod.BANK_TRANSFER) {
+                        result.append("Vui lòng chuyển khoản để xác nhận đơn hàng.");
+                } else {
+                        result.append("Thanh toán khi nhận hàng.");
+                }
+
+                return result.toString();
         }
 
         @Override
