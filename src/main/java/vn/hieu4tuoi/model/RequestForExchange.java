@@ -21,4 +21,13 @@ public class RequestForExchange extends AbstractEntity {
 
     @Column(name = "new_product_item_id")
     private String newProductItemId;
+
+    @Column(name = "user_id")
+    private String userId;
+
+    @Column(name = "phone_number", length = 20)
+    private String phoneNumber;
+
+    @Column(name = "address", length = 500)
+    private String address;
 }

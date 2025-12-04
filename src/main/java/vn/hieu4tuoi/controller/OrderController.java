@@ -11,11 +11,14 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import vn.hieu4tuoi.dto.request.order.OrderRequest;
+import vn.hieu4tuoi.dto.request.order.ReturnRequestRequest;
 import vn.hieu4tuoi.dto.request.order.UpdateOrderStatusRequest;
 import vn.hieu4tuoi.dto.respone.ResponseData;
 import vn.hieu4tuoi.dto.respone.PageResponse;
 import vn.hieu4tuoi.dto.respone.order.OrderDetailResponse;
 import vn.hieu4tuoi.dto.respone.order.OrderAdminResponse;
+import vn.hieu4tuoi.dto.respone.order.WarrantyClaimResponse;
+import vn.hieu4tuoi.dto.respone.order.ReturnRequestResponse;
 import vn.hieu4tuoi.service.OrderService;
 import vn.hieu4tuoi.common.OrderStatus;
 
@@ -42,8 +45,6 @@ public class OrderController {
         return new ResponseData<>(HttpStatus.OK.value(), "Lấy danh sách đơn hàng thành công", orderService.getOrderListByCurrentUser());
     }
 
-
-
     @GetMapping("/detail/{id}")
     public ResponseData<OrderDetailResponse> getOrderDetail(@PathVariable String id) {
         return new ResponseData<>(HttpStatus.OK.value(), "Lấy chi tiết đơn hàng thành công", orderService.getOrderDetail(id));
@@ -53,5 +54,21 @@ public class OrderController {
     public ResponseData<?> updateOrderStatus(@PathVariable String id, @RequestBody @Valid UpdateOrderStatusRequest request) {
         orderService.updateOrderStatus(id, request);
         return new ResponseData<>(HttpStatus.OK.value(), "Cập nhật trạng thái đơn hàng thành công", null);
+    }   
+
+    @PostMapping("/create-return-request")
+    public ResponseData<?> createReturnRequest(@RequestBody @Valid ReturnRequestRequest request) {
+        orderService.createReturnRequest(request);
+        return new ResponseData<>(HttpStatus.OK.value(), "Tạo yêu cầu thành công", null);
+    }
+
+    @GetMapping("/warranty/list/current-user")
+    public ResponseData<List<WarrantyClaimResponse>> getWarrantyClaimListByCurrentUser() {
+        return new ResponseData<>(HttpStatus.OK.value(), "Lấy danh sách bảo hành thành công", orderService.getWarrantyClaimListByCurrentUser());
+    }
+
+    @GetMapping("/return/list/current-user")
+    public ResponseData<List<ReturnRequestResponse>> getReturnRequestListByCurrentUser() {
+        return new ResponseData<>(HttpStatus.OK.value(), "Lấy danh sách trả hàng thành công", orderService.getReturnRequestListByCurrentUser());
     }
 }

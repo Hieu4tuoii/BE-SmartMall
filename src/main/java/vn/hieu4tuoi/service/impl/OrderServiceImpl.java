@@ -23,10 +23,12 @@ import vn.hieu4tuoi.common.OrderStatus;
 import vn.hieu4tuoi.common.PaymentMethod;
 import vn.hieu4tuoi.common.PaymentStatus;
 import vn.hieu4tuoi.common.ProductItemStatus;
+import vn.hieu4tuoi.common.ReturnRequestType;
 import vn.hieu4tuoi.common.StringUtils;
 import vn.hieu4tuoi.dto.request.order.OrderByAIRequest;
 import vn.hieu4tuoi.dto.request.order.OrderRequest;
 import vn.hieu4tuoi.dto.request.order.ProductItemImeiRequest;
+import vn.hieu4tuoi.dto.request.order.ReturnRequestRequest;
 import vn.hieu4tuoi.dto.request.order.UpdateOrderStatusRequest;
 import vn.hieu4tuoi.dto.respone.PageResponse;
 import vn.hieu4tuoi.dto.respone.order.CustomerOrderAdminResponse;
@@ -37,6 +39,10 @@ import vn.hieu4tuoi.dto.respone.order.OrderByAIResponse;
 import vn.hieu4tuoi.dto.respone.order.ProductOrderDetailResponse;
 import vn.hieu4tuoi.dto.respone.order.ProductOrderResponse;
 import vn.hieu4tuoi.dto.respone.order.ProductOrderAdminResponse;
+import vn.hieu4tuoi.dto.respone.order.WarrantyClaimResponse;
+import vn.hieu4tuoi.dto.respone.order.ReturnRequestResponse;
+import vn.hieu4tuoi.dto.respone.order.ProductWarrantyResponse;
+import vn.hieu4tuoi.dto.respone.order.ProductReturnResponse;
 import vn.hieu4tuoi.exception.BadRequestException;
 import vn.hieu4tuoi.exception.ResourceNotFoundException;
 import vn.hieu4tuoi.exception.UnauthorizedException;
@@ -54,7 +60,10 @@ import vn.hieu4tuoi.model.ProductColorVersion;
 import vn.hieu4tuoi.model.ProductItem;
 import vn.hieu4tuoi.model.ProductVersion;
 import vn.hieu4tuoi.model.Promotion;
+import vn.hieu4tuoi.model.RequestForExchange;
+import vn.hieu4tuoi.model.ReturnRequest;
 import vn.hieu4tuoi.model.User;
+import vn.hieu4tuoi.model.WarrantyClaim;
 import vn.hieu4tuoi.repository.CartItemRepository;
 import vn.hieu4tuoi.repository.OrderItemRepository;
 import vn.hieu4tuoi.repository.ProductColorVersionRepository;
@@ -64,6 +73,9 @@ import vn.hieu4tuoi.repository.PromotionRepository;
 import vn.hieu4tuoi.repository.UserRepository;
 import vn.hieu4tuoi.repository.ProductRepository;
 import vn.hieu4tuoi.repository.ImageRepository;
+import vn.hieu4tuoi.repository.ReturnRequestRepository;
+import vn.hieu4tuoi.repository.RequestForExchangeRepository;
+import vn.hieu4tuoi.repository.WarrantyClaimRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -79,7 +91,10 @@ public class OrderServiceImpl implements OrderService {
         private final ProductItemRepository productItemRepository;
         private final UserRepository userRepository;
         private final ImageRepository imageRepository;
-        private final ObjectMapper objectMapper;
+        private final ObjectMapper objectMapper;        
+        private final ReturnRequestRepository returnRequestRepository;
+        private final RequestForExchangeRepository requestForExchangeRepository;
+        private final WarrantyClaimRepository warrantyClaimRepository;
 
         @Override
         @Transactional
@@ -190,7 +205,9 @@ public class OrderServiceImpl implements OrderService {
 
         /**
          * Tạo đơn hàng thông qua AI Chatbot
-         * Nhận thông tin sản phẩm (productColorId, quantity) và thông tin giao hàng từ AI Tool
+         * Nhận thông tin sản phẩm (productColorId, quantity) và thông tin giao hàng từ
+         * AI Tool
+         * 
          * @param request thông tin đặt hàng từ AI Tool
          * @return thông báo kết quả đặt hàng
          */
@@ -226,7 +243,7 @@ public class OrderServiceImpl implements OrderService {
 
                 // Kiểm tra số lượng tồn kho
                 if (quantity > productColorVersion.getTotalStock().intValue()) {
-                        return "Số lượng sản phẩm trong kho không đủ. Hiện tại chỉ còn " 
+                        return "Số lượng sản phẩm trong kho không đủ. Hiện tại chỉ còn "
                                         + productColorVersion.getTotalStock() + " sản phẩm";
                 }
 
@@ -256,7 +273,8 @@ public class OrderServiceImpl implements OrderService {
                         if (discountAmount > promotion.getMaximumDiscountAmount()) {
                                 discountAmount = promotion.getMaximumDiscountAmount();
                         }
-                        discountedPrice = (long) Math.round((productVersion.getPrice() - discountAmount) / 1000.0) * 1000;
+                        discountedPrice = (long) Math.round((productVersion.getPrice() - discountAmount) / 1000.0)
+                                        * 1000;
                 }
 
                 // Parse payment method
@@ -267,7 +285,8 @@ public class OrderServiceImpl implements OrderService {
                 }
                 if (paymentMethodStr.equalsIgnoreCase("cash") || paymentMethodStr.equalsIgnoreCase("tiền mặt")) {
                         paymentMethod = PaymentMethod.CASH;
-                } else if (paymentMethodStr.equalsIgnoreCase("bank") || paymentMethodStr.equalsIgnoreCase("chuyển khoản")) {
+                } else if (paymentMethodStr.equalsIgnoreCase("bank")
+                                || paymentMethodStr.equalsIgnoreCase("chuyển khoản")) {
                         paymentMethod = PaymentMethod.BANK_TRANSFER;
                 } else {
                         return "Phương thức thanh toán không hợp lệ. Vui lòng chọn 'cash' (tiền mặt) hoặc 'bank' (chuyển khoản)";
@@ -430,95 +449,107 @@ public class OrderServiceImpl implements OrderService {
                 if (userId == null) {
                         throw new UnauthorizedException("Vui lòng đăng nhập để xem danh sách đơn hàng");
                 }
-                 List<Order> orderList = orderRepository.findAllByUserIdAndIsDeletedOrderByCreatedAtDesc(userId, false);
- 
-                 // order item
-                 List<String> orderIds = orderList.stream().map(Order::getId).toList();
-                 List<OrderItem> orderItems = orderItemRepository.findByOrderIdInAndIsDeleted(orderIds, false);
-                 Map<String, List<OrderItem>> orderItemMap = orderItems.stream()
-                                 .collect(Collectors.groupingBy(OrderItem::getOrderId));
- 
-                 // ds product color version
-                 List<String> productColorVersionIds = orderItems.stream()
-                                 .map(OrderItem::getProductColorVersionId)
-                                 .toList();
-                 List<ProductColorVersion> productColorVersions = productColorVersionRepository
-                                 .findAllByIdInAndIsDeleted(productColorVersionIds, false);
-                 Map<String, ProductColorVersion> productColorVersionMap = productColorVersions.stream()
-                                 .collect(Collectors.toMap(ProductColorVersion::getId, Function.identity()));
- 
-                 // ds product version
-                 List<String> productVersionIds = productColorVersions.stream()
-                                 .map(ProductColorVersion::getProductVersionId)
-                                 .toList();
-                 List<ProductVersion> productVersions = productVersionRepository
-                                 .findAllByIdInAndIsDeleted(productVersionIds, false);
-                 Map<String, ProductVersion> productVersionMap = productVersions.stream()
-                                 .collect(Collectors.toMap(ProductVersion::getId, Function.identity()));
- 
-                 // ds product
-                 List<String> productIds = productVersions.stream()
-                                 .map(ProductVersion::getProductId)
-                                 .toList();
-                 List<Product> products = productRepository.findAllByIdInAndIsDeleted(productIds, false);
-                 Map<String, Product> productMap = products.stream()
-                                 .collect(Collectors.toMap(Product::getId, Function.identity()));
+                List<Order> orderList = orderRepository.findAllByUserIdAndIsDeletedOrderByCreatedAtDesc(userId, false);
+
+                // order item
+                List<String> orderIds = orderList.stream().map(Order::getId).toList();
+                List<OrderItem> orderItems = orderItemRepository.findByOrderIdInAndIsDeleted(orderIds, false);
+                Map<String, List<OrderItem>> orderItemMap = orderItems.stream()
+                                .collect(Collectors.groupingBy(OrderItem::getOrderId));
+
+                // ds product color version
+                List<String> productColorVersionIds = orderItems.stream()
+                                .map(OrderItem::getProductColorVersionId)
+                                .toList();
+                List<ProductColorVersion> productColorVersions = productColorVersionRepository
+                                .findAllByIdInAndIsDeleted(productColorVersionIds, false);
+                Map<String, ProductColorVersion> productColorVersionMap = productColorVersions.stream()
+                                .collect(Collectors.toMap(ProductColorVersion::getId, Function.identity()));
+
+                // ds product version
+                List<String> productVersionIds = productColorVersions.stream()
+                                .map(ProductColorVersion::getProductVersionId)
+                                .toList();
+                List<ProductVersion> productVersions = productVersionRepository
+                                .findAllByIdInAndIsDeleted(productVersionIds, false);
+                Map<String, ProductVersion> productVersionMap = productVersions.stream()
+                                .collect(Collectors.toMap(ProductVersion::getId, Function.identity()));
+
+                // ds product
+                List<String> productIds = productVersions.stream()
+                                .map(ProductVersion::getProductId)
+                                .toList();
+                List<Product> products = productRepository.findAllByIdInAndIsDeleted(productIds, false);
+                Map<String, Product> productMap = products.stream()
+                                .collect(Collectors.toMap(Product::getId, Function.identity()));
 
                 // ds ảnh mặc định
-                List<Image> imageList = imageRepository.findAllByIsDefaultAndProductIdInAndIsDeleted(true, productIds, false);
+                List<Image> imageList = imageRepository.findAllByIsDefaultAndProductIdInAndIsDeleted(true, productIds,
+                                false);
                 Map<String, String> imageMap = imageList.stream()
                                 .collect(Collectors.toMap(Image::getProductId, Image::getUrl));
- 
-                 //  customer
-                 User customer = userRepository.findByIdAndIsDeleted(userId, false);
- 
-                 // set thông tin order và sản phẩm, customer
-                 List<OrderResponse> orderResponseList = new ArrayList<>();
-                 for (Order order : orderList) {
-                         OrderResponse orderResponse = new OrderResponse();
-                         orderResponse.setId(order.getId());
-                         orderResponse.setStatus(order.getStatus());
-                         orderResponse.setPaymentMethod(order.getPaymentMethod());
-                         orderResponse.setPaymentStatus(order.getPaymentStatus());
-                         orderResponse.setNote(order.getNote());
-                         orderResponse.setAddress(order.getAddress());
-                         orderResponse.setPhoneNumber(customer.getPhoneNumber());
-                         orderResponse.setCreatedAt(order.getCreatedAt());
-                         orderResponse.setModifiedAt(order.getModifiedAt());
-                         // get list order item của order
-                         List<OrderItem> orderItemsOrder = orderItemMap.get(order.getId());
-                         List<ProductOrderResponse> productOrderResponseList = new ArrayList<>();
-                         // Map<String, Integer> productQuantityMap = new HashMap<>();
-                         long totalPrice = 0;
-                         for (OrderItem orderItem : orderItemsOrder) {
-                                 ProductColorVersion productColorVersion = productColorVersionMap
-                                                 .get(orderItem.getProductColorVersionId());
-                                 ProductVersion productVersion = productVersionMap
-                                                 .get(productColorVersion.getProductVersionId());
-                                 Product product = productMap.get(productVersion.getProductId());
-                                 ProductOrderResponse productOrderResponse = new ProductOrderResponse();
-                                 productOrderResponse.setOrderItemId(orderItem.getId());
-                                 productOrderResponse.setProductName(product.getName());
-                                 productOrderResponse.setProductVersionName(productVersion.getName());
-                                 productOrderResponse.setColorName(productColorVersion.getColor());
-                                 productOrderResponse.setPrice(orderItem.getDiscountedPrice());
-                                 productOrderResponse.setImeiOrSerial(orderItem.getProductItemId());
-                                 productOrderResponse.setImageUrl(imageMap.get(productVersion.getProductId()));
-                                 productOrderResponse.setSlug(productVersion.getSlug());
-                                 totalPrice += orderItem.getDiscountedPrice();
-                                  productOrderResponseList.add(productOrderResponse);
-                         }
-                         // set thông tin customer
-                         CustomerOrderAdminResponse customerOrderResponse = new CustomerOrderAdminResponse();
-                         customerOrderResponse.setId(customer.getId());
-                         customerOrderResponse.setName(customer.getFullName());
-                         customerOrderResponse.setPhoneNumber(customer.getPhoneNumber());
-                        //  orderResponse.setCustomer(customerOrderResponse);
-                         orderResponse.setProducts(productOrderResponseList);;
-                         orderResponse.setTotalPrice(totalPrice);
-                         orderResponseList.add(orderResponse);
-                 }
-                 return orderResponseList;
+
+                // customer
+                User customer = userRepository.findByIdAndIsDeleted(userId, false);
+
+                // set thông tin order và sản phẩm, customer
+                List<OrderResponse> orderResponseList = new ArrayList<>();
+                for (Order order : orderList) {
+                        OrderResponse orderResponse = new OrderResponse();
+                        orderResponse.setId(order.getId());
+                        orderResponse.setStatus(order.getStatus());
+                        orderResponse.setPaymentMethod(order.getPaymentMethod());
+                        orderResponse.setPaymentStatus(order.getPaymentStatus());
+                        orderResponse.setNote(order.getNote());
+                        orderResponse.setAddress(order.getAddress());
+                        orderResponse.setPhoneNumber(customer.getPhoneNumber());
+                        orderResponse.setCreatedAt(order.getCreatedAt());
+                        orderResponse.setModifiedAt(order.getModifiedAt());
+                        // get list order item của order
+                        List<OrderItem> orderItemsOrder = orderItemMap.get(order.getId());
+                        List<ProductOrderResponse> productOrderResponseList = new ArrayList<>();
+                        // Map<String, Integer> productQuantityMap = new HashMap<>();
+                        long totalPrice = 0;
+                        for (OrderItem orderItem : orderItemsOrder) {
+                                ProductColorVersion productColorVersion = productColorVersionMap
+                                                .get(orderItem.getProductColorVersionId());
+                                ProductVersion productVersion = productVersionMap
+                                                .get(productColorVersion.getProductVersionId());
+                                Product product = productMap.get(productVersion.getProductId());
+                                ProductOrderResponse productOrderResponse = new ProductOrderResponse();
+                                productOrderResponse.setOrderItemId(orderItem.getId());
+                                productOrderResponse.setProductName(product.getName());
+                                productOrderResponse.setProductVersionName(productVersion.getName());
+                                productOrderResponse.setColorName(productColorVersion.getColor());
+                                productOrderResponse.setPrice(orderItem.getDiscountedPrice());
+                                productOrderResponse.setImeiOrSerial(orderItem.getProductItemId());
+                                productOrderResponse.setImageUrl(imageMap.get(productVersion.getProductId()));
+                                productOrderResponse.setSlug(productVersion.getSlug());
+                                totalPrice += orderItem.getDiscountedPrice();
+                                //nếu return id != null thì set return request type
+                                if (orderItem.getReturnRequestId() != null) {
+                                        productOrderResponse.setReturnRequestType(ReturnRequestType.RETURN);
+                                }
+                                if (orderItem.getRequestForExchangeId() != null) {
+                                        productOrderResponse.setReturnRequestType(ReturnRequestType.EXCHANGE);
+                                }
+                                if (orderItem.getWarrantyClaimId() != null) {
+                                        productOrderResponse.setReturnRequestType(ReturnRequestType.WARRANTY);  
+                                }
+                                productOrderResponseList.add(productOrderResponse);
+                        }
+                        // set thông tin customer
+                        CustomerOrderAdminResponse customerOrderResponse = new CustomerOrderAdminResponse();
+                        customerOrderResponse.setId(customer.getId());
+                        customerOrderResponse.setName(customer.getFullName());
+                        customerOrderResponse.setPhoneNumber(customer.getPhoneNumber());
+                        // orderResponse.setCustomer(customerOrderResponse);
+                        orderResponse.setProducts(productOrderResponseList);
+                        ;
+                        orderResponse.setTotalPrice(totalPrice);
+                        orderResponseList.add(orderResponse);
+                }
+                return orderResponseList;
         }
 
         @Override
@@ -653,7 +684,7 @@ public class OrderServiceImpl implements OrderService {
                                         throw new BadRequestException("Imei không hợp lệ");
                                 }
 
-                                // kiểm tra và lần lượt set imei or serial 
+                                // kiểm tra và lần lượt set imei or serial
                                 for (ProductItemImeiRequest productItemImeiRequest : request.getProductItemImeiList()) {
                                         OrderItem orderItem = orderItemMap.get(productItemImeiRequest.getOrderItemId());
                                         if (orderItem == null) {
@@ -670,7 +701,7 @@ public class OrderServiceImpl implements OrderService {
                                                         .equals(orderItem.getProductColorVersionId())) {
                                                 orderItem.setProductItemId(productItem.getId());
                                                 productItem.setStatus(ProductItemStatus.SOLD);
-                                               
+
                                         } else {
                                                 throw new BadRequestException(
                                                                 "IMEI hoặc serial không đúng với sản phẩm");
@@ -692,11 +723,14 @@ public class OrderServiceImpl implements OrderService {
                         if (order.getStatus() == OrderStatus.SHIPPING) {
                                 order.setStatus(OrderStatus.DELIVERED);
                                 order.setPaymentStatus(PaymentStatus.PAID);
-                                //get ds product item của order
-                                List<OrderItem> orderItems = orderItemRepository.findByOrderIdAndIsDeleted(order.getId(), false);
-                                List<String> productItemIds = orderItems.stream().map(OrderItem::getProductItemId).toList();
-                                List<ProductItem> productItems = productItemRepository.findAllByIdInAndIsDeleted(productItemIds, false);
-                                //cập nhật thời gian hết bảo hành cho từng product item
+                                // get ds product item của order
+                                List<OrderItem> orderItems = orderItemRepository
+                                                .findByOrderIdAndIsDeleted(order.getId(), false);
+                                List<String> productItemIds = orderItems.stream().map(OrderItem::getProductItemId)
+                                                .toList();
+                                List<ProductItem> productItems = productItemRepository
+                                                .findAllByIdInAndIsDeleted(productItemIds, false);
+                                // cập nhật thời gian hết bảo hành cho từng product item
                                 for (ProductItem productItem : productItems) {
                                         productItem.setWarrantyExpirationDate(LocalDate.now().plusMonths(12));
                                         productItem.setWarrantyActivationDate(LocalDate.now());
@@ -730,10 +764,10 @@ public class OrderServiceImpl implements OrderService {
                                 // Map<String, Integer> productColorVersionQuantityMap = new HashMap<>();
                                 // // Map<String, Integer> productVersionQuantityMap = new HashMap<>();
                                 // for (OrderItem orderItem : orderItems) {
-                                //         ProductColorVersion productColorVersion = productColorVersionMap
-                                //                 .get(orderItem.getProductColorVersionId());
-                                //         ProductVersion productVersion = productVersionMap
-                                //                 .get(productColorVersion.getProductVersionId());
+                                // ProductColorVersion productColorVersion = productColorVersionMap
+                                // .get(orderItem.getProductColorVersionId());
+                                // ProductVersion productVersion = productVersionMap
+                                // .get(productColorVersion.getProductVersionId());
                                 // }
 
                         } else {
@@ -767,5 +801,344 @@ public class OrderServiceImpl implements OrderService {
                 }
         }
 
-        
+        @Override
+        @Transactional
+        public void createReturnRequest(ReturnRequestRequest request) {
+
+                String userId = SecurityUtils.getCurrentUserId();
+                if (userId == null) {
+                        throw new UnauthorizedException("Vui lòng đăng nhập để tạo yêu cầu");
+                }
+                // tạo đơn đổi trả bảo hành, cần check cả 3 id null thì mới được gửi yêu cầu
+                OrderItem orderItem = orderItemRepository.findByIdAndIsDeleted(request.getOrderItemId(), false);
+                if (orderItem == null) {
+                        throw new ResourceNotFoundException("Đơn hàng không tồn tại");
+                }
+                
+                // Kiểm tra orderItem có thuộc về user hiện tại hay không
+                Order order = orderRepository.findByIdAndIsDeleted(orderItem.getOrderId(), false);
+                if (order == null) {
+                        throw new ResourceNotFoundException("Đơn hàng không tồn tại");
+                }
+                if (!order.getUserId().equals(userId)) {
+                        throw new BadRequestException("Bạn không có quyền tạo yêu cầu");
+                }
+                
+                if (orderItem.getReturnRequestId() != null || orderItem.getRequestForExchangeId() != null || orderItem.getWarrantyClaimId() != null) {
+                        throw new BadRequestException("Đơn hàng đã có yêu cầu đổi trả bảo hành");
+                }
+                //nếu type là trả hàng
+                if (request.getReturnRequestType() == ReturnRequestType.RETURN) {
+                        createReturnRequest(orderItem , userId, request.getReason());
+                }
+                //nếu type là đổi trả
+                if (request.getReturnRequestType() == ReturnRequestType.EXCHANGE) {
+                        createRequestForExchange(orderItem , userId, request.getReason(), request.getPhoneNumber(), request.getAddress());
+                }
+                //nếu type là bảo hành
+                if (request.getReturnRequestType() == ReturnRequestType.WARRANTY) {
+                        createWarrantyClaim(orderItem , userId, request.getReason(), request.getPhoneNumber(), request.getAddress());
+                }
+        }
+
+        /**
+         * Tạo yêu cầu trả hàng
+         */
+        private void createReturnRequest(OrderItem orderItem, String userId, String reason) {
+                ReturnRequest returnRequest = new ReturnRequest();
+                returnRequest.setOrderItemId(orderItem.getId());
+                returnRequest.setReason(reason);
+                returnRequest.setUserId(userId);
+                returnRequestRepository.save(returnRequest);
+
+                //lưu order item
+                orderItem.setReturnRequestId(returnRequest.getId());
+                orderItemRepository.save(orderItem);
+        }
+
+        /**
+         * Tạo yêu cầu đổi hàng
+         */
+        private void createRequestForExchange(OrderItem orderItem, String userId, String reason, String phoneNumber, String address) {
+                RequestForExchange requestForExchange = new RequestForExchange();
+                requestForExchange.setOrderItemId(orderItem.getId());
+                requestForExchange.setReason(reason);
+                requestForExchange.setUserId(userId);
+                requestForExchange.setPhoneNumber(phoneNumber);
+                requestForExchange.setAddress(address);
+                requestForExchangeRepository.save(requestForExchange);
+
+                //lưu order item
+                orderItem.setRequestForExchangeId(requestForExchange.getId());
+                orderItemRepository.save(orderItem);
+        }
+
+        /**
+         * Tạo yêu cầu bảo hành
+         */
+        private void createWarrantyClaim(OrderItem orderItem, String userId, String reason, String phoneNumber, String address) {
+                WarrantyClaim warrantyClaim = new WarrantyClaim();
+                warrantyClaim.setOrderItemId(orderItem.getId());
+                warrantyClaim.setReason(reason);
+                warrantyClaim.setUserId(userId);
+                warrantyClaim.setPhoneNumber(phoneNumber);
+                warrantyClaim.setAddress(address);
+                warrantyClaimRepository.save(warrantyClaim);
+                
+                //lưu order item
+                orderItem.setWarrantyClaimId(warrantyClaim.getId());
+                orderItemRepository.save(orderItem);
+        }
+
+        @Override
+        public List<WarrantyClaimResponse> getWarrantyClaimListByCurrentUser() {
+                String userId = SecurityUtils.getCurrentUserId();
+                if (userId == null) {
+                        throw new UnauthorizedException("Vui lòng đăng nhập để xem danh sách bảo hành");
+                }
+                
+                // Lấy danh sách yêu cầu bảo hành của user
+                List<WarrantyClaim> warrantyClaims = warrantyClaimRepository.findByUserIdAndIsDeletedOrderByCreatedAtDesc(userId, false);
+                
+                // Lấy danh sách orderItemId
+                List<String> orderItemIds = warrantyClaims.stream()
+                                .map(WarrantyClaim::getOrderItemId)
+                                .toList();
+                
+                // Lấy danh sách orderItem
+                List<OrderItem> orderItems = orderItemRepository.findAllByIdInAndIsDeleted(orderItemIds, false);
+                Map<String, OrderItem> orderItemMap = orderItems.stream()
+                                .collect(Collectors.toMap(OrderItem::getId, Function.identity()));
+                
+                // Lấy danh sách orderId để lấy thông tin order
+                List<String> orderIds = orderItems.stream()
+                                .map(OrderItem::getOrderId)
+                                .distinct()
+                                .toList();
+                List<Order> orders = orderRepository.findAllByIdInAndIsDeleted(orderIds, false);
+                Map<String, Order> orderMap = orders.stream()
+                                .collect(Collectors.toMap(Order::getId, Function.identity()));
+                
+                // Lấy danh sách productColorVersionId
+                List<String> productColorVersionIds = orderItems.stream()
+                                .map(OrderItem::getProductColorVersionId)
+                                .distinct()
+                                .toList();
+                List<ProductColorVersion> productColorVersions = productColorVersionRepository
+                                .findAllByIdInAndIsDeleted(productColorVersionIds, false);
+                Map<String, ProductColorVersion> productColorVersionMap = productColorVersions.stream()
+                                .collect(Collectors.toMap(ProductColorVersion::getId, Function.identity()));
+                
+                // Lấy danh sách productVersionId
+                List<String> productVersionIds = productColorVersions.stream()
+                                .map(ProductColorVersion::getProductVersionId)
+                                .distinct()
+                                .toList();
+                List<ProductVersion> productVersions = productVersionRepository
+                                .findAllByIdInAndIsDeleted(productVersionIds, false);
+                Map<String, ProductVersion> productVersionMap = productVersions.stream()
+                                .collect(Collectors.toMap(ProductVersion::getId, Function.identity()));
+                
+                // Lấy danh sách productId
+                List<String> productIds = productVersions.stream()
+                                .map(ProductVersion::getProductId)
+                                .distinct()
+                                .toList();
+                List<Product> products = productRepository.findAllByIdInAndIsDeleted(productIds, false);
+                Map<String, Product> productMap = products.stream()
+                                .collect(Collectors.toMap(Product::getId, Function.identity()));
+                
+                // Lấy danh sách ảnh mặc định
+                List<Image> imageList = imageRepository.findAllByIsDefaultAndProductIdInAndIsDeleted(true, productIds, false);
+                Map<String, String> imageMap = imageList.stream()
+                                .collect(Collectors.toMap(Image::getProductId, Image::getUrl));
+                
+                // Lấy danh sách productItemId để lấy imeiOrSerial
+                List<String> productItemIds = orderItems.stream()
+                                .map(OrderItem::getProductItemId)
+                                .filter(id -> id != null)
+                                .distinct()
+                                .toList();
+                List<ProductItem> productItems = productItemRepository.findAllByIdInAndIsDeleted(productItemIds, false);
+                Map<String, ProductItem> productItemMap = productItems.stream()
+                                .collect(Collectors.toMap(ProductItem::getId, Function.identity()));
+                
+                // Tạo danh sách response
+                List<WarrantyClaimResponse> warrantyClaimResponseList = new ArrayList<>();
+                for (WarrantyClaim warrantyClaim : warrantyClaims) {
+                        WarrantyClaimResponse response = new WarrantyClaimResponse();
+                        response.setId(warrantyClaim.getId());
+                        response.setStatus(warrantyClaim.getStatus());
+                        response.setReason(warrantyClaim.getReason());
+                        response.setPhoneNumber(warrantyClaim.getPhoneNumber());
+                        response.setAddress(warrantyClaim.getAddress());
+                        response.setCreatedAt(warrantyClaim.getCreatedAt());
+                        
+                        // Lấy orderItem và order
+                        OrderItem orderItem = orderItemMap.get(warrantyClaim.getOrderItemId());
+                        if (orderItem != null) {
+                                Order order = orderMap.get(orderItem.getOrderId());
+                                if (order != null) {
+                                        response.setOrderId(order.getId());
+                                }
+                                
+                                // Lấy thông tin sản phẩm
+                                ProductColorVersion productColorVersion = productColorVersionMap.get(orderItem.getProductColorVersionId());
+                                if (productColorVersion != null) {
+                                        ProductVersion productVersion = productVersionMap.get(productColorVersion.getProductVersionId());
+                                        if (productVersion != null) {
+                                                Product product = productMap.get(productVersion.getProductId());
+                                                if (product != null) {
+                                                        ProductWarrantyResponse productResponse = new ProductWarrantyResponse();
+                                                        productResponse.setOrderItemId(orderItem.getId());
+                                                        productResponse.setProductName(product.getName());
+                                                        productResponse.setProductVersionName(productVersion.getName());
+                                                        productResponse.setColorName(productColorVersion.getColor());
+                                                        productResponse.setImageUrl(imageMap.get(productVersion.getProductId()));
+                                                        
+                                                        // Lấy imeiOrSerial nếu có
+                                                        if (orderItem.getProductItemId() != null) {
+                                                                ProductItem productItem = productItemMap.get(orderItem.getProductItemId());
+                                                                if (productItem != null) {
+                                                                        productResponse.setImeiOrSerial(productItem.getImeiOrSerial());
+                                                                }
+                                                        }
+                                                        
+                                                        response.setProduct(productResponse);
+                                                }
+                                        }
+                                }
+                        }
+                        
+                        warrantyClaimResponseList.add(response);
+                }
+                
+                return warrantyClaimResponseList;
+        }
+
+        @Override
+        public List<ReturnRequestResponse> getReturnRequestListByCurrentUser() {
+                String userId = SecurityUtils.getCurrentUserId();
+                if (userId == null) {
+                        throw new UnauthorizedException("Vui lòng đăng nhập để xem danh sách trả hàng");
+                }
+                
+                // Lấy danh sách yêu cầu trả hàng của user
+                List<ReturnRequest> returnRequests = returnRequestRepository.findByUserIdAndIsDeletedOrderByCreatedAtDesc(userId, false);
+                
+                // Lấy danh sách orderItemId
+                List<String> orderItemIds = returnRequests.stream()
+                                .map(ReturnRequest::getOrderItemId)
+                                .toList();
+                
+                // Lấy danh sách orderItem
+                List<OrderItem> orderItems = orderItemRepository.findAllByIdInAndIsDeleted(orderItemIds, false);
+                Map<String, OrderItem> orderItemMap = orderItems.stream()
+                                .collect(Collectors.toMap(OrderItem::getId, Function.identity()));
+                
+                // Lấy danh sách orderId để lấy thông tin order
+                List<String> orderIds = orderItems.stream()
+                                .map(OrderItem::getOrderId)
+                                .distinct()
+                                .toList();
+                List<Order> orders = orderRepository.findAllByIdInAndIsDeleted(orderIds, false);
+                Map<String, Order> orderMap = orders.stream()
+                                .collect(Collectors.toMap(Order::getId, Function.identity()));
+                
+                // Lấy danh sách productColorVersionId
+                List<String> productColorVersionIds = orderItems.stream()
+                                .map(OrderItem::getProductColorVersionId)
+                                .distinct()
+                                .toList();
+                List<ProductColorVersion> productColorVersions = productColorVersionRepository
+                                .findAllByIdInAndIsDeleted(productColorVersionIds, false);
+                Map<String, ProductColorVersion> productColorVersionMap = productColorVersions.stream()
+                                .collect(Collectors.toMap(ProductColorVersion::getId, Function.identity()));
+                
+                // Lấy danh sách productVersionId
+                List<String> productVersionIds = productColorVersions.stream()
+                                .map(ProductColorVersion::getProductVersionId)
+                                .distinct()
+                                .toList();
+                List<ProductVersion> productVersions = productVersionRepository
+                                .findAllByIdInAndIsDeleted(productVersionIds, false);
+                Map<String, ProductVersion> productVersionMap = productVersions.stream()
+                                .collect(Collectors.toMap(ProductVersion::getId, Function.identity()));
+                
+                // Lấy danh sách productId
+                List<String> productIds = productVersions.stream()
+                                .map(ProductVersion::getProductId)
+                                .distinct()
+                                .toList();
+                List<Product> products = productRepository.findAllByIdInAndIsDeleted(productIds, false);
+                Map<String, Product> productMap = products.stream()
+                                .collect(Collectors.toMap(Product::getId, Function.identity()));
+                
+                // Lấy danh sách ảnh mặc định
+                List<Image> imageList = imageRepository.findAllByIsDefaultAndProductIdInAndIsDeleted(true, productIds, false);
+                Map<String, String> imageMap = imageList.stream()
+                                .collect(Collectors.toMap(Image::getProductId, Image::getUrl));
+                
+                // Lấy danh sách productItemId để lấy imeiOrSerial
+                List<String> productItemIds = orderItems.stream()
+                                .map(OrderItem::getProductItemId)
+                                .filter(id -> id != null)
+                                .distinct()
+                                .toList();
+                List<ProductItem> productItems = productItemRepository.findAllByIdInAndIsDeleted(productItemIds, false);
+                Map<String, ProductItem> productItemMap = productItems.stream()
+                                .collect(Collectors.toMap(ProductItem::getId, Function.identity()));
+                
+                // Tạo danh sách response
+                List<ReturnRequestResponse> returnRequestResponseList = new ArrayList<>();
+                for (ReturnRequest returnRequest : returnRequests) {
+                        ReturnRequestResponse response = new ReturnRequestResponse();
+                        response.setId(returnRequest.getId());
+                        response.setStatus(returnRequest.getStatus());
+                        response.setReason(returnRequest.getReason());
+                        response.setPhoneNumber(returnRequest.getPhoneNumber());
+                        response.setAddress(returnRequest.getAddress());
+                        response.setCreatedAt(returnRequest.getCreatedAt());
+                        
+                        // Lấy orderItem và order
+                        OrderItem orderItem = orderItemMap.get(returnRequest.getOrderItemId());
+                        if (orderItem != null) {
+                                Order order = orderMap.get(orderItem.getOrderId());
+                                if (order != null) {
+                                        response.setOrderId(order.getId());
+                                }
+                                
+                                // Lấy thông tin sản phẩm
+                                ProductColorVersion productColorVersion = productColorVersionMap.get(orderItem.getProductColorVersionId());
+                                if (productColorVersion != null) {
+                                        ProductVersion productVersion = productVersionMap.get(productColorVersion.getProductVersionId());
+                                        if (productVersion != null) {
+                                                Product product = productMap.get(productVersion.getProductId());
+                                                if (product != null) {
+                                                        ProductReturnResponse productResponse = new ProductReturnResponse();
+                                                        productResponse.setOrderItemId(orderItem.getId());
+                                                        productResponse.setProductName(product.getName());
+                                                        productResponse.setProductVersionName(productVersion.getName());
+                                                        productResponse.setColorName(productColorVersion.getColor());
+                                                        productResponse.setImageUrl(imageMap.get(productVersion.getProductId()));
+                                                        
+                                                        // Lấy imeiOrSerial nếu có
+                                                        if (orderItem.getProductItemId() != null) {
+                                                                ProductItem productItem = productItemMap.get(orderItem.getProductItemId());
+                                                                if (productItem != null) {
+                                                                        productResponse.setImeiOrSerial(productItem.getImeiOrSerial());
+                                                                }
+                                                        }
+                                                        
+                                                        response.setProduct(productResponse);
+                                                }
+                                        }
+                                }
+                        }
+                        
+                        returnRequestResponseList.add(response);
+                }
+                
+                return returnRequestResponseList;
+        }
 }

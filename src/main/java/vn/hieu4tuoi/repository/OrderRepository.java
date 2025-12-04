@@ -19,4 +19,6 @@ public interface OrderRepository extends JpaRepository<Order, String> {
     Order findByIdAndIsDeleted(String id, boolean isDeleted);
 
     List<Order> findAllByUserIdAndIsDeletedOrderByCreatedAtDesc(String userId, boolean isDeleted);
+    
+    List<Order> findAllByIdInAndIsDeleted(List<String> ids, boolean isDeleted);
 }

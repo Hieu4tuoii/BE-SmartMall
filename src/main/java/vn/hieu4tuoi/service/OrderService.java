@@ -5,11 +5,14 @@ import java.util.List;
 import vn.hieu4tuoi.common.OrderStatus;
 import vn.hieu4tuoi.dto.request.order.OrderByAIRequest;
 import vn.hieu4tuoi.dto.request.order.OrderRequest;
+import vn.hieu4tuoi.dto.request.order.ReturnRequestRequest;
 import vn.hieu4tuoi.dto.request.order.UpdateOrderStatusRequest;
 import vn.hieu4tuoi.dto.respone.PageResponse;
 import vn.hieu4tuoi.dto.respone.order.OrderAdminResponse;
 import vn.hieu4tuoi.dto.respone.order.OrderDetailResponse;
 import vn.hieu4tuoi.dto.respone.order.OrderResponse;
+import vn.hieu4tuoi.dto.respone.order.WarrantyClaimResponse;
+import vn.hieu4tuoi.dto.respone.order.ReturnRequestResponse;
 
 public interface OrderService {
     String createOrder(OrderRequest request);
@@ -27,4 +30,20 @@ public interface OrderService {
     OrderDetailResponse getOrderDetail(String id);
 
     void updateOrderStatus(String id, UpdateOrderStatusRequest request);
+
+    void createReturnRequest(ReturnRequestRequest request);
+
+    /**
+     * Lấy danh sách yêu cầu bảo hành của user hiện tại
+     * @return danh sách yêu cầu bảo hành
+     */
+    List<WarrantyClaimResponse> getWarrantyClaimListByCurrentUser();
+
+    /**
+     * Lấy danh sách yêu cầu trả hàng của user hiện tại
+     * @return danh sách yêu cầu trả hàng
+     */
+    List<ReturnRequestResponse> getReturnRequestListByCurrentUser();
+
+    
 }
