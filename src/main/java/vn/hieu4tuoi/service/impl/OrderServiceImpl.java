@@ -13,6 +13,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import lombok.RequiredArgsConstructor;
 import vn.hieu4tuoi.service.OrderService;
 import vn.hieu4tuoi.Security.SecurityUtils;
@@ -31,6 +33,7 @@ import vn.hieu4tuoi.dto.respone.order.CustomerOrderAdminResponse;
 import vn.hieu4tuoi.dto.respone.order.OrderDetailResponse;
 import vn.hieu4tuoi.dto.respone.order.OrderResponse;
 import vn.hieu4tuoi.dto.respone.order.OrderAdminResponse;
+import vn.hieu4tuoi.dto.respone.order.OrderByAIResponse;
 import vn.hieu4tuoi.dto.respone.order.ProductOrderDetailResponse;
 import vn.hieu4tuoi.dto.respone.order.ProductOrderResponse;
 import vn.hieu4tuoi.dto.respone.order.ProductOrderAdminResponse;
@@ -76,6 +79,7 @@ public class OrderServiceImpl implements OrderService {
         private final ProductItemRepository productItemRepository;
         private final UserRepository userRepository;
         private final ImageRepository imageRepository;
+        private final ObjectMapper objectMapper;
 
         @Override
         @Transactional
@@ -303,24 +307,18 @@ public class OrderServiceImpl implements OrderService {
                 // Tính tổng tiền
                 long totalPrice = discountedPrice * quantity;
 
-                // Tạo thông báo kết quả
-                StringBuilder result = new StringBuilder();
-                result.append("Đặt hàng thành công! ");
-                result.append("Mã đơn hàng: ").append(order.getId()).append(". ");
-                result.append("Sản phẩm: ").append(product.getName()).append(" - ");
-                result.append(productVersion.getName()).append(" - ");
-                result.append("Màu ").append(productColorVersion.getColor()).append(". ");
-                result.append("Số lượng: ").append(quantity).append(". ");
-                result.append("Tổng tiền: ").append(String.format("%,d", totalPrice)).append(" VNĐ. ");
-                result.append("Địa chỉ giao hàng: ").append(request.getAddress()).append(". ");
-                result.append("Số điện thoại: ").append(request.getPhoneNumber()).append(". ");
-                if (paymentMethod == PaymentMethod.BANK_TRANSFER) {
-                        result.append("Vui lòng chuyển khoản để xác nhận đơn hàng.");
-                } else {
-                        result.append("Thanh toán khi nhận hàng.");
+                // Tạo response object và convert sang JSON
+                try {
+                        OrderByAIResponse response = new OrderByAIResponse();
+                        response.setMessage("order success!");
+                        response.setOrderId(order.getId());
+                        response.setTotalPrice(totalPrice);
+                        response.setPaymentMethod(paymentMethod);
+                        return objectMapper.writeValueAsString(response);
+                } catch (Exception e) {
+                        // Nếu có lỗi khi convert JSON, trả về string như cũ
+                        return "Có lỗi xảy ra khi đặt hàng.";
                 }
-
-                return result.toString();
         }
 
         @Override

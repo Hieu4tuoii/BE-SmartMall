@@ -37,6 +37,7 @@ public class EndPoints {
             "/order/list/current-user",
             "/api/bank/check/**",
             "/chat/history",
+            "/chat/payment-status/**",
     };
     public static final String[] CUSTOMER_POST_ENDPOINTS = {
             "/chat",

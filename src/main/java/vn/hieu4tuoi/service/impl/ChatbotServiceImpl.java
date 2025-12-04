@@ -1,5 +1,6 @@
 package vn.hieu4tuoi.service.impl;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -31,12 +32,16 @@ import vn.hieu4tuoi.dto.request.hybrid.HybridRagSearchRequest;
 import vn.hieu4tuoi.dto.request.order.OrderByAIRequest;
 import vn.hieu4tuoi.dto.respone.chat.AIResponse;
 import vn.hieu4tuoi.dto.respone.hybrid.HybridRagSearchResponse;
-import vn.hieu4tuoi.dto.respone.product.ProductVersionResponse;
+import vn.hieu4tuoi.common.PaymentMethod;
+import vn.hieu4tuoi.dto.respone.order.OrderByAIResponse;
+import vn.hieu4tuoi.exception.ResourceNotFoundException;
 import vn.hieu4tuoi.exception.UnauthorizedException;
+import vn.hieu4tuoi.model.ChatHistory;
 import vn.hieu4tuoi.model.Function;
 import vn.hieu4tuoi.model.ToolCall;
 import vn.hieu4tuoi.repository.ChatHistoryRepository;
 import vn.hieu4tuoi.repository.UserRepository;
+import vn.hieu4tuoi.service.BankService;
 import vn.hieu4tuoi.service.ChatHistoryService;
 import vn.hieu4tuoi.service.HybridRagService;
 import vn.hieu4tuoi.service.OrderService;
@@ -66,6 +71,7 @@ public class ChatbotServiceImpl {
     private String branch = "Chi nhánh Hà Nội";
     private String bank = "MBBank";
     private String name = "Phạm Huy Tuấn";
+    private final BankService bankService;
 
     @Transactional
     public String getChatResponse(UserChatRequest req) {
@@ -84,7 +90,7 @@ public class ChatbotServiceImpl {
 
                 Output Verbosity: Giới hạn độ dài câu trả lời tối đa 2 đoạn ngắn hoặc 4 ý gạch đầu dòng, mỗi ý không quá 1 dòng.  Ưu tiên trả lời ngắn gọn nhưng đầy đủ, rõ ràng và dễ hiểu trong phạm vi độ dài đã nêu. Nếu khách hỏi nhiều ý, hãy đảm bảo trả lời trọn vẹn các ý trong giới hạn này.
 
-                Một số lưu ý cho từng hàm: 
+                Một số lưu ý cho từng hàm:
                 - Hàm Product_Consulting: message là tin nhắn tư vấn sẽ được gửi trực tiếp đến khách hàng, tư vấn ngắn gọn, rõ ràng, dễ hiểu dựa trên dữ liệu sản phẩm từ hàm Search_Product và từ nhu cầu của khách hàng.
                 - Hàm Order: không được hỏi số lượng sản phẩm. BẮT BUỘC follow theo quy trình sau: Hỏi màu sắc, số điện thoại, địa chỉ, ghi chú ( nếu có, chỉ hỏi 1 lần ) -> Sau khi có đầy đủ thông tin thì gửi lại thông tin đơn hàng và hỏi phương thức thanh toán để xác nhận đơn hàng-> Sau đó gọi hàm order.
                         """;
@@ -110,7 +116,8 @@ public class ChatbotServiceImpl {
             messages.add(ChatbotRequest.Message.builder()
                     .role(chatHistory.getRole())
                     .content(chatHistory.getContent())
-                    .tool_calls(chatHistory.getTool_calls().isEmpty() ? null : chatHistory.getTool_calls())
+                    .tool_calls(chatHistory.getTool_calls() == null || chatHistory.getTool_calls().isEmpty() ? null
+                            : chatHistory.getTool_calls())
                     .tool_call_id(chatHistory.getTool_call_id())
                     .build());
         }
@@ -198,7 +205,7 @@ public class ChatbotServiceImpl {
                     // }
 
                     // neu tool la Search_Product
-                     if (toolName.equals("Search_Product")) {
+                    if (toolName.equals("Search_Product")) {
                         // lấy tham số từ tool call
                         String arguments = messageResponseFromAI.getTool_calls().get(0).getFunction().getArguments();
                         // chuyển đổi arguments từ json sang mảng searchProductByAIRequest
@@ -211,15 +218,17 @@ public class ChatbotServiceImpl {
                         String searchProductJson = "";
                         searchProductJson = objectMapper.writeValueAsString(searchProduct);
                         return handleFunctionCall(messages, req, messageResponseFromAI,
-                                "Danh sách sản phẩm: " + searchProductJson, userId, true);
+                                "Gọi hàm Product_Consulting để tư vấn sản phẩm phù hợp nhất: " + searchProductJson,
+                                userId, true);
                     }
 
-                    //neu tool la Product_Consulting
+                    // neu tool la Product_Consulting
                     else if (toolName.equals("Product_Consulting")) {
                         return handleFunctionCall(messages, req, messageResponseFromAI,
-                            "done", userId, false);
-                        //ngắn chặn open ai sinh ra cầu trả lời thừa sau khi kết thúc hàm Product_Consulting, tự sinh ra tin nhắn thủ công
-                        
+                                "done Product_Consulting", userId, false);
+                        // ngắn chặn open ai sinh ra cầu trả lời thừa sau khi kết thúc hàm
+                        // Product_Consulting, tự sinh ra tin nhắn thủ công
+
                     }
                     // neu tool la Order - xử lý đặt hàng qua AI
                     else if (toolName.equals("Order")) {
@@ -233,26 +242,94 @@ public class ChatbotServiceImpl {
                             return handleFunctionCall(messages, req, messageResponseFromAI,
                                     "Lỗi khi chuyển đổi dữ liệu đặt hàng. Vui lòng thử lại.", userId, true);
                         }
-                        
+
                         // Gọi hàm đặt hàng
                         String orderResult = orderService.createOrderByAI(orderByAIRequest);
-                        log.info("Kết quả đặt hàng: {}", orderResult);
-                        
-                        // Kiểm tra nếu đặt hàng thành công và là thanh toán chuyển khoản
-                        if (orderResult.contains("Đặt hàng thành công") && orderResult.contains("chuyển khoản")) {
-                            // Tạo QR code cho thanh toán
-                            // Lấy tổng tiền từ kết quả (format: "Tổng tiền: 1,000,000 VNĐ")
-                            String orderId = orderResult.split("Mã đơn hàng: ")[1].split("\\.")[0];
-                            String totalPriceStr = orderResult.split("Tổng tiền: ")[1].split(" VNĐ")[0].replace(",", "");
-                            String qrCodeUrl = String.format(
-                                    "https://qr.sepay.vn/img?acc=%s&bank=%s&amount=%s&des=%s&template=qronly&download=DOWNLOAD",
-                                    accountNumber, bank, totalPriceStr, orderId);
-                            
-                            // Thêm thông tin QR code vào kết quả
-                            String resultWithQR = orderResult + " QR Code thanh toán: " + qrCodeUrl;
-                            return handleFunctionCall(messages, req, messageResponseFromAI, resultWithQR, userId, true);
+
+                        // Kiểm tra nếu đặt hàng thành công (chứa 'order success')
+                        if (orderResult.contains("order success")) {
+                            try {
+                                // Parse JSON về đối tượng OrderByAIResponse
+                                OrderByAIResponse orderResponse = objectMapper.readValue(orderResult,
+                                        OrderByAIResponse.class);
+
+                                if (orderResponse.getPaymentMethod() != null) {
+                                    // Kiểm tra nếu là thanh toán chuyển khoản
+                                    if (orderResponse.getPaymentMethod() == PaymentMethod.BANK_TRANSFER) {
+                                        // Tạo QR code cho thanh toán
+                                        String qrCodeUrl = String.format(
+                                                "https://qr.sepay.vn/img?acc=%s&bank=%s&amount=%s&des=%s&template=qronly&download=DOWNLOAD",
+                                                accountNumber, bank, orderResponse.getTotalPrice(),
+                                                orderResponse.getOrderId());
+
+                                        // Thêm thông tin QR code vào response
+                                        orderResponse.setMessage(
+                                                orderResponse.getMessage() + " QR Code thanh toán: " + qrCodeUrl);
+                                        // String resultWithQR = objectMapper.writeValueAsString(orderResponse);
+
+                                        // tạo tin nhắn tư vấn thủ công với tin nhắn đầu là vui lònng quét qr để thanh
+                                        // toán và tin nhắn thứ 2 là link qr code
+                                        ChatRequest chatRequest = new ChatRequest();
+                                        chatRequest.setContent("Vui lòng quét qr để thanh toán");
+                                        chatRequest.setRole(RoleChat.assistant);
+                                        chatRequest.setUserId(userId);
+                                        chatRequest.setToolCallId(null);
+                                        chatRequest.setToolCalls(null);
+                                        chatRequest.setHidden(false);
+                                        chatHistoryService.saveAndFlush(chatRequest);
+                                        
+                                        ChatRequest chatRequest2 = new ChatRequest();
+                                        chatRequest2.setContent(qrCodeUrl);
+                                        chatRequest2.setRole(RoleChat.qr_code);
+                                        chatRequest2.setUserId(userId);
+                                        chatRequest2.setToolCallId(null);
+                                        chatRequest2.setToolCalls(null);
+                                        chatRequest2.setHidden(false);
+                                        chatHistoryService.saveAndFlush(chatRequest2);
+
+                                        // return handleFunctionCall(messages, req, messageResponseFromAI, resultWithQR,
+                                        // userId, true);
+                                    } else {
+                                        ChatRequest chatRequest3 = new ChatRequest();
+                                        chatRequest3.setContent(
+                                                "Đơn hàng đã được đặt, vui lòng chuẩn bị sẵn tiền mặt để thanh toán");
+                                        chatRequest3.setRole(RoleChat.assistant);
+                                        chatRequest3.setUserId(userId);
+                                        chatRequest3.setToolCallId(null);
+                                        chatRequest3.setToolCalls(null);
+                                        chatRequest3.setHidden(false);
+                                        chatHistoryService.saveAndFlush(chatRequest3);
+                                    }
+
+                                    return "done Order";
+                                    // neu phuong thuc thanh toan khong hop le
+                                } else {
+                                    ChatRequest chatRequest = new ChatRequest();
+                                    chatRequest.setContent(
+                                            "Phương thức thanh toán không hợp lệ.");
+                                    chatRequest.setRole(RoleChat.assistant);
+                                    chatRequest.setUserId(userId);
+                                    chatRequest.setToolCallId(null);
+                                    chatRequest.setToolCalls(null);
+                                    chatRequest.setHidden(false);
+                                    chatHistoryService.saveAndFlush(chatRequest);
+                                    return "order failed";
+                                }
+                                // có lỗi khi parse json ( lỗi ko rõ nguyên nhân)
+                            } catch (Exception e) {
+                                ChatRequest chatRequest = new ChatRequest();
+                                chatRequest.setContent(
+                                        "Có lỗi xảy ra khi đặt hàng.");
+                                chatRequest.setRole(RoleChat.assistant);
+                                chatRequest.setUserId(userId);
+                                chatRequest.setToolCallId(null);
+                                chatRequest.setToolCalls(null);
+                                chatRequest.setHidden(false);
+                                chatHistoryService.saveAndFlush(chatRequest);
+                                return "order failed";
+                            }
                         }
-                        
+                        // truong hop ko chứa succes -> order lỗi -> ai gen lõi dựa trên result cung cấp
                         return handleFunctionCall(messages, req, messageResponseFromAI, orderResult, userId, true);
                     }
                     // //neu ham ham lay ds order
@@ -332,6 +409,7 @@ public class ChatbotServiceImpl {
     }
 
     // hàm xử lý function call
+
     private String handleFunctionCall(List<ChatbotRequest.Message> messages, UserChatRequest req,
             AIResponse.Choice.Message messageResponseFromAI, String contentToolCall, String userId, Boolean hidden) {
         // tin nhan yêu cầu gọi hàm từ AI
@@ -386,19 +464,69 @@ public class ChatbotServiceImpl {
         chatHistoryService.saveAndFlush(chatToolCallRequest);
 
         // gửi dữ liệu đến AI
-        if(contentToolCall.equals("done")) {
-            //gửi tin nhắn thủ công và lưu lại vào db
+        if (contentToolCall.equals("done Product_Consulting")) {
+            // gửi tin nhắn thủ công và lưu lại vào db
             ChatRequest chatDoneRequest = new ChatRequest();
-            chatDoneRequest.setContent("done");
+            chatDoneRequest.setContent("done Product_Consulting");
             chatDoneRequest.setRole(RoleChat.assistant);
             chatDoneRequest.setUserId(userId);
             chatDoneRequest.setToolCallId(null);
             chatDoneRequest.setToolCalls(null);
             chatDoneRequest.setHidden(true);
             chatHistoryService.saveAndFlush(chatDoneRequest);
-            return "done";
+            return "done Product_Consulting";
         }
         return CallAIAPi(messages, req, userId);
     }
 
+    // check trang thai thanh toan đơn hàng, tạo tin nhắn thành công nếu thành công
+    @Transactional
+    public Boolean checkPaymentStatus(Long chatHistoryId) {
+        String userId = SecurityUtils.getCurrentUserId();
+
+        ChatHistory chatHistory = chatHistoryRepository.findByIdAndUserId(chatHistoryId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Chat history not found with id: " + chatHistoryId));
+        // trích xuất orderId từ content của chatHistory (qrCodeUrl), orderId chính là
+        // tham số 'des' trong link QR
+        String orderId = null;
+        try {
+            URI qrUri = new URI(chatHistory.getContent());
+            String query = qrUri.getQuery(); // acc=...&bank=...&amount=...&des=ORDER_ID&template=...
+            if (query != null) {
+                String[] params = query.split("&");
+                for (String param : params) {
+                    if (param.startsWith("des=")) {
+                        orderId = param.substring("des=".length());
+                        break;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Lỗi khi parse QR url để lấy orderId: {}", e.getMessage());
+        }
+
+        if (orderId == null || orderId.isEmpty()) {
+            return false;
+        }
+
+        if (bankService.isValidBank(orderId)) {
+            // qr cũ và thay bằng image default, thêm tin nhắn thành công
+            ChatRequest chatRequest = new ChatRequest();
+            chatRequest.setContent(
+                    "Đơn hàng đã thanh toán thành công, chúng tôi sẽ giao hàng sớm nhất có thể, cảm ơn bạn đã tin tưởng sử dụng dịch vụ!");
+            chatRequest.setRole(RoleChat.assistant);
+            chatRequest.setUserId(userId);
+            chatRequest.setToolCallId(null);
+            chatRequest.setToolCalls(null);
+            chatRequest.setHidden(false);
+            chatHistoryService.saveAndFlush(chatRequest);
+
+            chatHistory.setContent(null);
+            chatHistory.setRole(RoleChat.payment_success);
+            chatHistoryRepository.save(chatHistory);
+
+            return true;
+        }
+        return false;
+    }
 }

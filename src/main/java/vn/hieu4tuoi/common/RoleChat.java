@@ -5,6 +5,8 @@ public enum RoleChat {
     user,
     assistant,
     tool,
-    product_consulting
+    product_consulting,
+    payment_success,
+    qr_code
 }
 

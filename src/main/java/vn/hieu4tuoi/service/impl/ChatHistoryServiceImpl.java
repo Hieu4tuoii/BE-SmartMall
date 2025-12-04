@@ -30,6 +30,7 @@ import vn.hieu4tuoi.service.ProductService;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -171,9 +172,10 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
             throw new ResourceNotFoundException("User not found with id: " + userId);
         }
 
-        // Get recent chat histories
-        List<ChatHistory> chatHistories = chatHistoryRepository.findTop40ByUserIdAndCreatedAtBetweenOrderByIdDesc(
-                userId, LocalDateTime.now().minusDays(1), LocalDateTime.now());
+        // Get recent chat histories - bao gồm cả tool messages để đảm bảo tính nhất quán của conversation
+        // Khi có assistant message với tool_calls, phải có tool messages phản hồi tương ứng
+        List<ChatHistory> chatHistories = chatHistoryRepository.findTop40ByUserIdAndRoleInAndCreatedAtBetweenOrderByIdDesc(
+                userId, Arrays.asList(RoleChat.user, RoleChat.assistant, RoleChat.tool), LocalDateTime.now().minusDays(1), LocalDateTime.now());
 
         // dao nguoc danh sach chat history
         Collections.reverse(chatHistories);

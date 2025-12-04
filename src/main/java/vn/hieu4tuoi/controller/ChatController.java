@@ -1,6 +1,5 @@
 package vn.hieu4tuoi.controller;
 
-import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -11,7 +10,6 @@ import vn.hieu4tuoi.dto.respone.chat.ChatHistoryResponse;
 import vn.hieu4tuoi.service.ChatHistoryService;
 import vn.hieu4tuoi.service.impl.ChatbotServiceImpl;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -23,12 +21,7 @@ public class ChatController {
 
     @PostMapping("/")
     public ResponseData<String> handleChatMessage(@RequestBody UserChatRequest request) {
-        try {
             return new ResponseData<>(HttpStatus.OK.value(), "Get chat response successfully", chatBotService.getChatResponse(request));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseData<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Đã có lỗi xảy ra. Vui lòng thử lại sau.");
-        }
     }
 
     //lay ds chat history (phan trang lay 20 tin nhan gan nhat)
@@ -47,12 +40,19 @@ public class ChatController {
      */
     @DeleteMapping("/history")
     public ResponseData<Void> deleteAllChatHistoryOfCurrentUser() {
-        try {
             chatHistoryService.deleteAllChatHistoriesOfCurrentUser();
             return new ResponseData<>(HttpStatus.OK.value(), "Xóa toàn bộ lịch sử chat thành công");
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseData<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Đã có lỗi xảy ra. Vui lòng thử lại sau.");
-        }
+    }
+
+    /**
+     * Kiểm tra trạng thái thanh toán đơn hàng từ chat history.
+     * Nếu thanh toán thành công, sẽ cập nhật chat history và tạo tin nhắn thông báo thành công.
+     * 
+     * @param chatHistoryId ID của chat history chứa QR code thanh toán
+     * @return ResponseData chứa Boolean: true nếu thanh toán thành công, false nếu chưa thanh toán hoặc lỗi
+     */
+    @GetMapping("/payment-status/{chatHistoryId}")
+    public ResponseData<Boolean> checkPaymentStatus(@PathVariable Long chatHistoryId) {
+            return new ResponseData<>(HttpStatus.OK.value(), "Check payment status successfully", chatBotService.checkPaymentStatus(chatHistoryId));
     }
 }
