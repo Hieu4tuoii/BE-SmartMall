@@ -5,7 +5,7 @@ spring:
   devtools:
     add-properties: true
   datasource:
-    url: jdbc:mysql://localhost:3306/smartmall
+    url: jdbc:mysql://localhost:3306/smartmall1
     username: smartmall2902
     password: smartmall2902
   jpa:
@@ -46,7 +46,11 @@ jwt:
 #  accessKey: TCWX/PoH4ze9qdhTm7YAmwKf0qBrKSnF5fdwfUlLTEA=
 #  refreshKey: YJoOPyEuDpwNqlsFnRrttjBpLsHYVe5T4ekB1IBFM0U=
 fe:
-  domains: http://localhost:3000,http://localhost:8080
+  domains: >
+    http://localhost:3000,
+    http://192.168.1.28:8080,
+    http://192.168.1.28:3000,
+    http://192.168.*.*:3000
 
 file:
   upload-dir: ./uploads

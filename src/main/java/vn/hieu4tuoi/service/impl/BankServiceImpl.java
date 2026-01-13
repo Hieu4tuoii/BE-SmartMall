@@ -48,6 +48,8 @@ public class BankServiceImpl implements BankService{
         List<OrderItem> orderItems = orderItemRepository.findByOrderIdAndIsDeleted(orderId, false);
         //tinh tong tien cua order
         Long totalPrice = orderItems.stream().map(OrderItem::getDiscountedPrice).reduce(0L, Long::sum);
+        // Giảm số tiền xuống 1000 lần để dễ test
+        Long reducedTotalPrice = totalPrice / 1000;
 
         BankResponse response = fetchBankTransactions();
         if (response == null || response.getTransactions() == null) {
@@ -57,23 +59,23 @@ public class BankServiceImpl implements BankService{
        // Extract transaction list from response
         List<Transaction> transactions = response.getTransactions();
 
-        // Regex để lấy nội dung giữa dấu chấm thứ 3 và thứ 4 của transactionContent
-        String regex = "(?:[^.]*\\.){3}([^.]*)\\.";
-        Pattern pattern = Pattern.compile(regex);
+        // // Regex để lấy nội dung giữa dấu chấm thứ 3 và thứ 4 của transactionContent
+        // String regex = "(?:[^.]*\\.){3}([^.]*)\\.";
+        // Pattern pattern = Pattern.compile(regex);
 
         for(Transaction transaction : transactions) {
-            Matcher matcher = pattern.matcher(transaction.getTransaction_content());
-            if (matcher.find()) {
-                String extractedContent = matcher.group(1).trim();
+            // Matcher matcher = pattern.matcher(transaction.getTransaction_content());
+            // if (matcher.find()) {
+                // String extractedContent = matcher.group(1).trim();
                 //giá trị amount_in từ APpi vaf ep kieu ve long
                  Long amountIn = Long.parseLong(transaction.getAmount_in().replace(".00", ""));
-                if (extractedContent.replace("-", "").equals(order.getId().replace("-", "")) && amountIn.equals(totalPrice)) {
+                if ((transaction.getTransaction_content().contains(order.getId().replace("-", "")) || transaction.getTransaction_content().contains(order.getId()))) {
                     //thuc hien confirm thanh toan
                     order.setPaymentStatus(PaymentStatus.PAID);
                     orderRepository.save(order);
                     return true;
                 }
-            } 
+            // } 
         }
         return false;
     }

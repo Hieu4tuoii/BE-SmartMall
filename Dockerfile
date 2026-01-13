@@ -1,9 +1,5 @@
-FROM openjdk:17
+FROM eclipse-temurin:17-jre-alpine
 
-ARG JAR_FILE=target/*.jar
+COPY target/*.jar app.jar
 
-COPY ${JAR_FILE} backend-service.jar
-
-ENTRYPOINT ["java", "-jar", "backend-service.jar"]
-
-EXPOSE 8080
+CMD ["java", "-jar", "app.jar"]

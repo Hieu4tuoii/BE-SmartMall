@@ -20,5 +20,9 @@ public interface ProductRepository extends JpaRepository<Product, String> {
     //get ds sản phẩm ko bị xóa
     List<Product> findAllByIsDeleted(boolean isDeleted);
 
+    //chỉ lấy ds sản phẩm chưa bị xóa (dùng cho catalog hiện tại)
     List<Product> findAllByIdInAndIsDeleted(List<String> ids, boolean isDeleted);
+
+    //lấy ds sản phẩm theo ids, bao gồm cả bản ghi đã bị xóa (dùng cho join, lịch sử đơn hàng...)
+    List<Product> findAllByIdIn(List<String> ids);
 }

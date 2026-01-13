@@ -22,6 +22,9 @@ public class ReturnRequestResponse {
     private String reason;                  // Lý do
     private String phoneNumber;             // Số điện thoại
     private String address;                 // Địa chỉ
+    private String imageUrl;                // URL hình ảnh
+    private String accountNumber;           // Số tài khoản
+    private String bankName;                // Tên ngân hàng
     private LocalDateTime createdAt;        // Ngày gửi yêu cầu
     private ProductReturnResponse product; // Sản phẩm
 }

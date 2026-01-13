@@ -136,7 +136,12 @@ public interface ProductVersionRepository extends JpaRepository<ProductVersion, 
 
     //tìm ds product version theo product id và chưa bị xóa
     List<ProductVersion> findByProductIdAndIsDeletedOrderByCreatedAtAsc(String productId, Boolean isDeleted);
+
+    //chỉ lấy ds product version chưa bị xóa (dùng cho hiển thị catalog hiện tại)
     List<ProductVersion> findAllByIdInAndIsDeleted(List<String> ids, Boolean isDeleted);
+
+    //lấy ds product version theo ids, bao gồm cả bản ghi đã bị xóa (dùng cho join, lịch sử đơn hàng...)
+    List<ProductVersion> findAllByIdIn(List<String> ids);
 
     /**
      * Tìm kiếm ProductVersion theo danh sách IDs (trả về List)

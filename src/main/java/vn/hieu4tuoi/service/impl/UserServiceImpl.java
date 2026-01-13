@@ -9,17 +9,21 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import vn.hieu4tuoi.Security.SecurityUtils;
 import vn.hieu4tuoi.common.StepActive;
 import vn.hieu4tuoi.common.UserStatus;
+import vn.hieu4tuoi.dto.request.user.CustomerUpdateRequest;
 import vn.hieu4tuoi.dto.request.user.EmployeeRequest;
 import vn.hieu4tuoi.dto.respone.PageResponse;
 import vn.hieu4tuoi.dto.respone.user.UserResponse;
 import vn.hieu4tuoi.mapper.UserMapper;
+import vn.hieu4tuoi.exception.InvalidDataException;
 import vn.hieu4tuoi.exception.ResourceNotFoundException;
 import vn.hieu4tuoi.model.Authorities;
 import vn.hieu4tuoi.model.User;
@@ -34,6 +38,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final AuthoritiesRepository authoritiesRepository;
     private final UserMapper userMapper;
+    private final BCryptPasswordEncoder passwordEncoder;
 
     @Override
     public PageResponse<List<UserResponse>> getCustomerList(String keyword, String sort, int page, int size) {
@@ -89,7 +94,17 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public String createEmployee(EmployeeRequest request) {
+        // Kiểm tra email đã tồn tại (chỉ tính user chưa bị xóa)
+        User existingUser = userRepository.findByEmailAndIsDeletedFalse(request.getEmail());
+        if (existingUser != null) {
+            throw new InvalidDataException("Email đã được sử dụng");
+        }
+
         User user = userMapper.employeeRequestToEntity(request);
+        if (StringUtils.hasText(request.getPassword())) {
+            // Mã hóa mật khẩu nhân viên trước khi lưu
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
         user.setStepActive(StepActive.ACTIVE);
         user.setStatus(UserStatus.ACTIVE);
         //set role
@@ -124,6 +139,11 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("Tài khoản nhân viên không tồn tại"));
         userMapper.updateUser(request, user);
 
+        if (StringUtils.hasText(request.getPassword())) {
+            // Mã hóa mật khẩu khi cập nhật thông tin nhân viên (nếu có đổi mật khẩu)
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
+
         //set role
         Authorities employeeRole = authoritiesRepository.findById("ROLE_EMPLOYEE")
                 .orElseThrow(() -> new ResourceNotFoundException("Vai trò EMPLOYEE không tồn tại"));
@@ -131,6 +151,37 @@ public class UserServiceImpl implements UserService {
         authoritiesList.add(employeeRole);
         user.setAuthorities(authoritiesList);
 
+        userRepository.save(user);
+    }
+
+    @Override
+    public UserResponse getCurrentCustomer() {
+        String currentUserId = SecurityUtils.getCurrentUserId();
+        if (currentUserId == null) {
+            throw new ResourceNotFoundException("Không tìm thấy thông tin tài khoản khách hàng");
+        }
+
+        User user = userRepository.findByIdAndIsDeleted(currentUserId, false);
+        if (user == null) {
+            throw new ResourceNotFoundException("Tài khoản khách hàng không tồn tại");
+        }
+
+        return userMapper.entityToResponse(user);
+    }
+
+    @Override
+    public void updateCurrentCustomer(CustomerUpdateRequest request) {
+        String currentUserId = SecurityUtils.getCurrentUserId();
+        if (currentUserId == null) {
+            throw new ResourceNotFoundException("Không tìm thấy thông tin tài khoản khách hàng");
+        }
+
+        User user = userRepository.findByIdAndIsDeleted(currentUserId, false);
+        if (user == null) {
+            throw new ResourceNotFoundException("Tài khoản khách hàng không tồn tại");
+        }
+
+        userMapper.updateCustomer(request, user);
         userRepository.save(user);
     }
 }

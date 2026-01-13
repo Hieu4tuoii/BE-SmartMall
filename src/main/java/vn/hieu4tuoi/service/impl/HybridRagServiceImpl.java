@@ -28,6 +28,8 @@ import vn.hieu4tuoi.model.Product;
 import vn.hieu4tuoi.model.ProductColorVersion;
 import vn.hieu4tuoi.model.ProductVersion;
 import vn.hieu4tuoi.repository.ProductColorVersionRepository;
+import vn.hieu4tuoi.repository.ProductRepository;
+import vn.hieu4tuoi.repository.ProductVersionRepository;
 import vn.hieu4tuoi.service.HybridRagService;
 
 @Slf4j
@@ -45,6 +47,8 @@ public class HybridRagServiceImpl implements HybridRagService {
     private final ObjectMapper objectMapper;
 
     private final ProductColorVersionRepository productColorVersionRepository;
+    private final ProductRepository productRepository;
+    private final ProductVersionRepository productVersionRepository;
 
     @Override
     public void syncProductVersion(Product product, ProductVersion productVersion) {
@@ -61,6 +65,43 @@ public class HybridRagServiceImpl implements HybridRagService {
             log.error("Không thể đồng bộ phiên bản sản phẩm {} tới Hybrid RAG: {}", productVersion.getId(),
                     ex.getMessage(), ex);
         }
+    }
+
+    /**
+     * Đồng bộ toàn bộ sản phẩm trong hệ thống lên Hybrid RAG
+     * Lấy tất cả sản phẩm không bị xóa và các phiên bản của chúng để đồng bộ
+     */
+    @Override
+    public void syncAllProducts() {
+        log.info("Bắt đầu đồng bộ toàn bộ sản phẩm lên Hybrid RAG");
+        
+        // Lấy tất cả sản phẩm không bị xóa
+        List<Product> products = productRepository.findAllByIsDeleted(false);
+        log.info("Tìm thấy {} sản phẩm cần đồng bộ", products.size());
+        
+        int successCount = 0;
+        int failCount = 0;
+        
+        // Duyệt qua từng sản phẩm
+        for (Product product : products) {
+            // Lấy tất cả phiên bản của sản phẩm không bị xóa
+            List<ProductVersion> productVersions = productVersionRepository
+                    .findByProductIdAndIsDeletedOrderByCreatedAtAsc(product.getId(), false);
+            
+            // Đồng bộ từng phiên bản
+            for (ProductVersion productVersion : productVersions) {
+                try {
+                    syncProductVersion(product, productVersion);
+                    successCount++;
+                    log.debug("Đồng bộ thành công phiên bản sản phẩm: {}", productVersion.getId());
+                } catch (Exception ex) {
+                    failCount++;
+                    log.error("Lỗi khi đồng bộ phiên bản sản phẩm {}: {}", productVersion.getId(), ex.getMessage());
+                }
+            }
+        }
+        
+        log.info("Hoàn thành đồng bộ sản phẩm. Thành công: {}, Thất bại: {}", successCount, failCount);
     }
 
     @Override

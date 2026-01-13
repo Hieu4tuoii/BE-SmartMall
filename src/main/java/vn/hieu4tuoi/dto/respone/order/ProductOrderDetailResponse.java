@@ -16,4 +16,5 @@ public class ProductOrderDetailResponse {
     private String colorName;
     private Long price;
     private String imeiOrSerial;
+    private String imageUrl;
 }

@@ -1,5 +1,6 @@
 package vn.hieu4tuoi.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -19,6 +20,18 @@ public interface OrderRepository extends JpaRepository<Order, String> {
     Order findByIdAndIsDeleted(String id, boolean isDeleted);
 
     List<Order> findAllByUserIdAndIsDeletedOrderByCreatedAtDesc(String userId, boolean isDeleted);
-    
+
+    //chỉ lấy ds order chưa bị xóa
     List<Order> findAllByIdInAndIsDeleted(List<String> ids, boolean isDeleted);
+
+    //lấy ds order theo ids, bao gồm cả bản ghi đã bị xóa (dùng cho join, lịch sử...)
+    List<Order> findAllByIdIn(List<String> ids);
+
+    /**
+     * Lấy danh sách đơn hàng theo khoảng thời gian tạo và trạng thái, chỉ lấy isDeleted = false.
+     */
+    List<Order> findAllByStatusInAndCreatedAtBetweenAndIsDeleted(List<OrderStatus> statuses,
+                                                                 LocalDateTime start,
+                                                                 LocalDateTime end,
+                                                                 boolean isDeleted);
 }

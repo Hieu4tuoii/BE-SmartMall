@@ -162,4 +162,15 @@ public class ProductController {
         return new ResponseData<>(HttpStatus.OK.value(), "Lấy danh sách sản phẩm thành công",
                 productService.getProductItemsByProductVersionColorId(id, status, page, size, sort, imeiOrSerial));
     }
+
+    /**
+     * API đồng bộ toàn bộ sản phẩm trong hệ thống lên Hybrid RAG
+     * Lấy tất cả sản phẩm và các phiên bản của chúng để đồng bộ
+     */
+    @PostMapping("/sync-all-to-hybrid-rag")
+    @Operation(summary = "Đồng bộ toàn bộ sản phẩm lên Hybrid RAG")
+    public ResponseData<?> syncAllProductsToHybridRag() {
+        hybridRagService.syncAllProducts();
+        return new ResponseData<>(HttpStatus.OK.value(), "Đồng bộ toàn bộ sản phẩm lên Hybrid RAG thành công");
+    }
 }

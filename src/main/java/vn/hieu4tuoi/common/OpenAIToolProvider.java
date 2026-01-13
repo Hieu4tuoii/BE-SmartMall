@@ -18,7 +18,7 @@ public class OpenAIToolProvider {
     public OpenAIToolProvider() {
         objectMapper = new ObjectMapper();
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-    }
+    }   
 
     @PostConstruct
     public void initialize() {
@@ -75,7 +75,7 @@ public class OpenAIToolProvider {
                 new NestedObjectSchema("string", "ID của sản phẩm")));
         FunctionDefinition createMessageFunction = new FunctionDefinition(
                 "Product_Consulting",
-                "Dựa theo nhu cầu của khách hàng, tạo tư vấn 1-3 sản phẩm phù hợp nhất kèm danh sách product_id của các sản phẩm này sau khi có dữ liệu từ hàm Search_Product. Hàm được kết thúc khi tôi gửi lại \"done\"",
+                "Dựa theo nhu cầu của khách hàng, tạo tư vấn 1-3 sản phẩm phù hợp nhất kèm danh sách product_id của các sản phẩm này sau khi có dữ liệu từ hàm Search_Product. Lưu ý: hạn chế tư vấn các phiên bản khác nhau của cùng sản phẩm, ưu tiên phiên bản lớn tiền hơn ( ví dụ: Iphone 16 pro 256gb giá 28.990.000 đồng, Iphone 16 pro 512gb giá 31.990.000 đồng thì tư vấn Iphone 16 pro 512gb ). Hàm được kết thúc khi tôi gửi lại \"done\"",
                 new ParameterSchema("object", createMessageProperties, Arrays.asList("message")));
 
         // tool 3: Đặt hàng

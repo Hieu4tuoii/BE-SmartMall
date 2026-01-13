@@ -11,8 +11,11 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import vn.hieu4tuoi.dto.request.order.OrderRequest;
+import vn.hieu4tuoi.dto.request.order.OrderByAIRequest;
 import vn.hieu4tuoi.dto.request.order.ReturnRequestRequest;
 import vn.hieu4tuoi.dto.request.order.UpdateOrderStatusRequest;
+import vn.hieu4tuoi.dto.request.order.UpdateWarrantyStatusRequest;
+import vn.hieu4tuoi.dto.request.order.UpdateReturnRequestStatusRequest;
 import vn.hieu4tuoi.dto.respone.ResponseData;
 import vn.hieu4tuoi.dto.respone.PageResponse;
 import vn.hieu4tuoi.dto.respone.order.OrderDetailResponse;
@@ -21,6 +24,8 @@ import vn.hieu4tuoi.dto.respone.order.WarrantyClaimResponse;
 import vn.hieu4tuoi.dto.respone.order.ReturnRequestResponse;
 import vn.hieu4tuoi.service.OrderService;
 import vn.hieu4tuoi.common.OrderStatus;
+import vn.hieu4tuoi.common.WarrantyStatus;
+import vn.hieu4tuoi.common.ReturnRequestStatus;
 
 @RestController
 @RequestMapping("/order")
@@ -32,6 +37,11 @@ public class OrderController {
     @PostMapping("/create")
     public ResponseData<?> createOrder(@RequestBody @Valid OrderRequest request) {
         return new ResponseData<>(HttpStatus.OK.value(), "Tạo đơn hàng thành công", orderService.createOrder(request));
+    }
+
+    @PostMapping("/create-direct")
+    public ResponseData<?> createOrderDirect(@RequestBody @Valid OrderByAIRequest request) {
+        return new ResponseData<>(HttpStatus.OK.value(), "Tạo đơn hàng thành công", orderService.createOrderDirect(request));
     }
 
     @GetMapping("/list")
@@ -70,5 +80,49 @@ public class OrderController {
     @GetMapping("/return/list/current-user")
     public ResponseData<List<ReturnRequestResponse>> getReturnRequestListByCurrentUser() {
         return new ResponseData<>(HttpStatus.OK.value(), "Lấy danh sách trả hàng thành công", orderService.getReturnRequestListByCurrentUser());
+    }
+
+    // ========== ADMIN APIs ==========
+    
+    @GetMapping("/admin/warranty/list")
+    public ResponseData<PageResponse<List<WarrantyClaimResponse>>> getWarrantyClaimListForAdmin(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt:desc") String sort,
+            @RequestParam(required = false) WarrantyStatus status) {
+        return new ResponseData<>(HttpStatus.OK.value(), "Lấy danh sách bảo hành thành công", 
+                orderService.getWarrantyClaimListForAdmin(page, size, sort, status));
+    }
+
+    @GetMapping("/admin/return/list")
+    public ResponseData<PageResponse<List<ReturnRequestResponse>>> getReturnRequestListForAdmin(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt:desc") String sort,
+            @RequestParam(required = false) ReturnRequestStatus status) {
+        return new ResponseData<>(HttpStatus.OK.value(), "Lấy danh sách trả hàng thành công", 
+                orderService.getReturnRequestListForAdmin(page, size, sort, status));
+    }
+
+    @PutMapping("/admin/warranty/update-status/{id}")
+    public ResponseData<?> updateWarrantyStatus(@PathVariable String id, @RequestBody @Valid UpdateWarrantyStatusRequest request) {
+        orderService.updateWarrantyStatus(id, request);
+        return new ResponseData<>(HttpStatus.OK.value(), "Cập nhật trạng thái bảo hành thành công", null);
+    }
+
+    @PutMapping("/admin/return/update-status/{id}")
+    public ResponseData<?> updateReturnRequestStatus(@PathVariable String id, @RequestBody @Valid UpdateReturnRequestStatusRequest request) {
+        orderService.updateReturnRequestStatus(id, request);
+        return new ResponseData<>(HttpStatus.OK.value(), "Cập nhật trạng thái trả hàng thành công", null);
+    }
+
+    @GetMapping("/admin/warranty/detail/{id}")
+    public ResponseData<WarrantyClaimResponse> getWarrantyClaimDetail(@PathVariable String id) {
+        return new ResponseData<>(HttpStatus.OK.value(), "Lấy chi tiết bảo hành thành công", orderService.getWarrantyClaimDetail(id));
+    }
+
+    @GetMapping("/admin/return/detail/{id}")
+    public ResponseData<ReturnRequestResponse> getReturnRequestDetail(@PathVariable String id) {
+        return new ResponseData<>(HttpStatus.OK.value(), "Lấy chi tiết trả hàng thành công", orderService.getReturnRequestDetail(id));
     }
 }

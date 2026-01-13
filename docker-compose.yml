@@ -1,34 +1,46 @@
-services:
-  mysql:
-    image: mysql:8.0
-    container_name: mysql
-    cap_add:
-      - SYS_NICE
-    restart: always
-    environment:
-      - MYSQL_DATABASE=testdb
-      - MYSQL_ROOT_PASSWORD=password
-    ports:
-      - '3306:3306'
-    volumes:
-      - mysql_data:/var/lib/mysql
-      - ./initdb.sql:/docker-entrypoint-initdb.d/initdb.sql
-    networks:
-      - default
+#services:
+#  mysql:
+#    image: mysql:8.0
+#    container_name: mysql
+#    cap_add:
+#      - SYS_NICE
+#    restart: always
+#    environment:
+#      - MYSQL_DATABASE=testdb
+#      - MYSQL_ROOT_PASSWORD=password
+#    ports:
+#      - '3306:3306'
+#    volumes:
+#      - mysql_data:/var/lib/mysql
+#      - ./initdb.sql:/docker-entrypoint-initdb.d/initdb.sql
+#    networks:
+#      - default
+#
+#  backend-service:
+#    container_name: backend-service
+#    build:
+#      context: ./
+#      dockerfile: Dockerfile
+#    ports:
+#      - "8080:8080"
+#    networks:
+#      - default
+#
+#networks:
+#  default:
+#    name: backend-service
+#
+#volumes:
+#  mysql_data:
 
+services:
   backend-service:
-    container_name: backend-service
-    build:
-      context: ./
-      dockerfile: Dockerfile
+    build: .
     ports:
       - "8080:8080"
-    networks:
-      - default
-
-networks:
-  default:
-    name: backend-service
-
-volumes:
-  mysql_data:
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/smartmall1
+      - SPRING_DATASOURCE_USERNAME=smartmall2902
+      - SPRING_DATASOURCE_PASSWORD=smartmall2902
+#    depends_on:
+#    - mysql #khởi động mysql trước

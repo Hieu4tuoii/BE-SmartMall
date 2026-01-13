@@ -24,5 +24,9 @@ public interface UserRepository extends JpaRepository<User, String> {
            "AND (LOWER(u.email) LIKE :keyword OR LOWER(u.fullName) LIKE :keyword OR LOWER(u.phoneNumber) LIKE :keyword)")
     Page<User> searchCustomerByKeyword(@Param("authority") Authorities authority, @Param("keyword") String keyword, Pageable pageable);
 
+    //chỉ lấy ds user chưa bị xóa (dùng cho màn quản trị user hiện tại)
     List<User> findAllByIdInAndIsDeleted(List<String> ids, boolean isDeleted);
+
+    //lấy ds user theo ids, bao gồm cả bản ghi đã bị xóa (dùng cho join, lịch sử đơn hàng...)
+    List<User> findAllByIdIn(List<String> ids);
 }

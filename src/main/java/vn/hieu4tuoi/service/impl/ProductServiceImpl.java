@@ -6,6 +6,8 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.Random;
 
 import org.springframework.stereotype.Service;
 import java.util.regex.Matcher;
@@ -60,6 +62,9 @@ import vn.hieu4tuoi.repository.ProductItemRepository;
 import vn.hieu4tuoi.repository.ProductRepository;
 import vn.hieu4tuoi.repository.ProductVersionRepository;
 import vn.hieu4tuoi.repository.PromotionRepository;
+import vn.hieu4tuoi.dto.request.importOrder.ImportOrderRequest;
+import vn.hieu4tuoi.dto.request.importOrder.ImportColorVersionRequest;
+import vn.hieu4tuoi.service.ImportOrderService;
 import vn.hieu4tuoi.service.HybridRagService;
 import vn.hieu4tuoi.service.ProductService;
 import org.springframework.transaction.annotation.Transactional;
@@ -83,6 +88,10 @@ public class ProductServiceImpl implements ProductService {
     private final ProductItemRepository productItemRepository;
     private final ProductItemMapper productItemMapper;
     private final HybridRagService hybridRagService;
+    private final ImportOrderService importOrderService;
+
+    //id nhà cung cấp mặc định dùng khi tự động tạo phiếu nhập cho phiên bản màu mới
+    private static final String DEFAULT_SUPPLIER_ID_FOR_AUTO_IMPORT = "272577a2-7f9f-46da-9823-0d02edbf4121";
     @Override
     @Transactional
     public String create(ProductCreateRequest request) {
@@ -279,6 +288,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public String createColorVersion(ProductColorVersionRequest request) {
         ProductVersion productVersion = productVersionRepository.findByIdAndIsDeleted(request.getProductVersionId(),
                 false);
@@ -287,6 +297,10 @@ public class ProductServiceImpl implements ProductService {
         }
         ProductColorVersion productColorVersion = productColorVersionMapper.requestToEntity(request);
         productColorVersion = productColorVersionRepository.save(productColorVersion);
+
+        // Sau khi tạo phiên bản màu, tự động tạo phiếu nhập 20 sản phẩm cho color version đó
+        createAutoImportOrderForNewColorVersion(productVersion, productColorVersion);
+
         return productColorVersion.getId();
     }
 
@@ -300,6 +314,47 @@ public class ProductServiceImpl implements ProductService {
         // productColorVersion.setImage(request.getImage());
         productColorVersion.setSku(request.getSku());
         productColorVersionRepository.save(productColorVersion);
+    }
+
+    /**
+     * Tự động tạo 1 phiếu nhập cho phiên bản màu mới được tạo.
+     * - Nhà cung cấp: sử dụng id mặc định cấu hình trong class.
+     * - Giá nhập: 70% giá bán của phiên bản sản phẩm.
+     * - Số lượng: 20 máy, mỗi máy có 1 imei ngẫu nhiên.
+     */
+    private void createAutoImportOrderForNewColorVersion(ProductVersion productVersion,
+            ProductColorVersion productColorVersion) {
+        // tính giá nhập = 70% giá phiên bản
+        long importPriceLong = Math.round(productVersion.getPrice() * 0.7);
+
+        ImportColorVersionRequest importColorVersionRequest = new ImportColorVersionRequest();
+        importColorVersionRequest.setId(productColorVersion.getId());
+        importColorVersionRequest.setImportPrice(java.math.BigDecimal.valueOf(importPriceLong));
+        importColorVersionRequest.setImeiOrSerialList(generateRandomImeiList(20));
+
+        ImportOrderRequest importOrderRequest = new ImportOrderRequest();
+        importOrderRequest.setSupplierId(DEFAULT_SUPPLIER_ID_FOR_AUTO_IMPORT);
+        importOrderRequest.setImportColorVersionList(List.of(importColorVersionRequest));
+
+        importOrderService.create(importOrderRequest);
+    }
+
+    /**
+     * Sinh danh sách imei ngẫu nhiên dùng cho product item khi tự động tạo phiếu nhập.
+     * Đảm bảo mỗi imei có độ dài 15 ký tự số để dễ quản lý và tra cứu.
+     */
+    private List<String> generateRandomImeiList(int count) {
+        List<String> imeiList = new ArrayList<>();
+        Random random = new Random();
+        for (int i = 0; i < count; i++) {
+            StringBuilder imeiBuilder = new StringBuilder();
+            for (int j = 0; j < 15; j++) {
+                int digit = random.nextInt(10);
+                imeiBuilder.append(digit);
+            }
+            imeiList.add(imeiBuilder.toString());
+        }
+        return imeiList;
     }
 
     @Override
@@ -391,18 +446,14 @@ public class ProductServiceImpl implements ProductService {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(order));
 
-        // Tìm kiếm theo keyword hoặc lấy tất cả
-        if (StringUtils.hasLength(keyword)) {
-            keyword = "%" + keyword.toLowerCase().trim() + "%";
-        } else {
-            keyword = "%%";
-        }
+        // Tạo keyword theo full text search (bỏ dấu, lower, thêm wildcards)
+        String keywordSearch = CommonUtils.createKeywordSearch(keyword);
         
         //nếu hasPromotion là true thì lấy ds product version có promotion còn hiệu lực
         boolean filterByPromotion = Boolean.TRUE.equals(hasPromotion);
         LocalDateTime now = filterByPromotion ? LocalDateTime.now() : null;
         Page<ProductVersion> productVersionPage = productVersionRepository.searchProductVersion(now, brandIds,
-                categoryIds, minPrice, maxPrice, keyword, pageable);
+                categoryIds, minPrice, maxPrice, keywordSearch, pageable);
 
         //làm giàu thông tin cho product version response (image, product name, promotion)
         List<ProductVersionResponse> productVersionResponses = enrichProductVersionResponses(productVersionPage.getContent());
@@ -571,8 +622,8 @@ public class ProductServiceImpl implements ProductService {
         Map<String, String> imageMap = imageList.stream()
                 .collect(Collectors.toMap(Image::getProductId, Image::getUrl));
 
-        //list product để lấy tên đầy đủ
-        List<Product> products = productRepository.findAllByIdInAndIsDeleted(productIds, false);
+        //list product để lấy tên đầy đủ (lấy theo ids, tránh phụ thuộc isDeleted để không lỗi join)
+        List<Product> products = productRepository.findAllByIdIn(productIds);
         Map<String, Product> productMap = products.stream()
                 .collect(Collectors.toMap(Product::getId, p -> p));
 

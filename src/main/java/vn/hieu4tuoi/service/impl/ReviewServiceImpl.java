@@ -69,13 +69,17 @@ public class ReviewServiceImpl implements ReviewService {
 
         //list user id
         List<String> userIds = reviews.stream().map(Review::getUserId).toList();
-        List<User> users = userRepository.findAllByIdInAndIsDeleted(userIds, false);
+        // lấy cả user đã bị xóa để tránh lỗi khi join, đồng thời vẫn có thể ẩn/thay thế tên ở layer khác nếu cần
+        List<User> users = userRepository.findAllByIdIn(userIds);
         Map<String, User> userMap = users.stream()
                 .collect(Collectors.toMap(User::getId, Function.identity()));
 
         List<ReviewResponse> reviewResponses = reviews.stream().map(review -> {
             ReviewResponse response = reviewMapper.toResponse(review);
-            response.setUserFullName(userMap.get(review.getUserId()).getFullName());
+            User user = userMap.get(review.getUserId());
+            if (user != null) {
+                response.setUserFullName(user.getFullName());
+            }
             return response;
         }).toList();
         

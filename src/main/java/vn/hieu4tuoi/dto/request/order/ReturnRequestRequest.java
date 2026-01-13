@@ -20,4 +20,10 @@ public class ReturnRequestRequest {
     private String phoneNumber;
     
     private String address;
+
+    private String imageUrl;
+
+    private String accountNumber;
+
+    private String bankName;
 }

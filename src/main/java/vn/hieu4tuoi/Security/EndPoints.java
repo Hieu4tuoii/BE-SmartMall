@@ -31,6 +31,7 @@ public class EndPoints {
 
     public static final String[] CUSTOMER_PUT_ENDPOINTS = {
             "/cart/update",
+            "/user/customer/current-user",
     };
 
     public static final String[] CUSTOMER_GET_ENDPOINTS = {
@@ -38,6 +39,7 @@ public class EndPoints {
             "/api/bank/check/**",
             "/chat/history",
             "/chat/payment-status/**",
+            "/user/customer/current-user",
     };
     public static final String[] CUSTOMER_POST_ENDPOINTS = {
             "/chat",
@@ -49,6 +51,7 @@ public class EndPoints {
             "/product/**",
             "/user/**",
             "/order/**",
+            "/statistics/**",
 
     };
 

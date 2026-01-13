@@ -29,7 +29,6 @@ import vn.hieu4tuoi.repository.ProductRepository;
 import vn.hieu4tuoi.repository.ProductVersionRepository;
 import vn.hieu4tuoi.repository.PromotionRepository;
 import vn.hieu4tuoi.repository.ImageRepository;
-import vn.hieu4tuoi.service.ProductService;
 
 @Service
 @RequiredArgsConstructor
@@ -120,8 +119,9 @@ public class CartServiceImpl implements CartService {
         List<String> productColorVersionIds = cartItems.stream()
                 .map(CartItem::getProductColorVersionId)
                 .toList();
+        // lấy cả các bản ghi đã bị xóa để tránh lỗi khi join giỏ hàng cũ
         List<ProductColorVersion> productColorVersions = productColorVersionRepository
-                .findAllByIdInAndIsDeleted(productColorVersionIds, false);
+                .findAllByIdIn(productColorVersionIds);
         Map<String, ProductColorVersion> productColorVersionMap = productColorVersions.stream()
                 .collect(Collectors.toMap(ProductColorVersion::getId, p -> p));
 
@@ -129,8 +129,7 @@ public class CartServiceImpl implements CartService {
         List<String> productVersionIds = productColorVersions.stream()
                 .map(ProductColorVersion::getProductVersionId)
                 .toList();
-        List<ProductVersion> productVersions = productVersionRepository.findAllByIdInAndIsDeleted(productVersionIds,
-                false);
+        List<ProductVersion> productVersions = productVersionRepository.findAllByIdIn(productVersionIds);
         Map<String, ProductVersion> productVersionMap = productVersions.stream()
                 .collect(Collectors.toMap(ProductVersion::getId, p -> p));
 
@@ -138,7 +137,7 @@ public class CartServiceImpl implements CartService {
         List<String> productIds = productVersions.stream()
                 .map(ProductVersion::getProductId)
                 .toList();
-        List<Product> products = productRepository.findAllByIdInAndIsDeleted(productIds, false);
+        List<Product> products = productRepository.findAllByIdIn(productIds);
         Map<String, Product> productMap = products.stream()
                 .collect(Collectors.toMap(Product::getId, p -> p));
 

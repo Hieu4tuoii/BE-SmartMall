@@ -22,6 +22,7 @@ public class WarrantyClaimResponse {
     private String reason;                  // Lý do
     private String phoneNumber;             // Số điện thoại
     private String address;                 // Địa chỉ
+    private String imageUrl;                // URL hình ảnh
     private LocalDateTime createdAt;        // Ngày gửi yêu cầu
     private ProductWarrantyResponse product; // Sản phẩm
 }

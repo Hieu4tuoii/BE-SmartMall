@@ -17,5 +17,11 @@ public interface HybridRagService {
      * @return Danh sách kết quả tìm kiếm từ Hybrid RAG
      */
     List<HybridRagSearchResponse> searchProducts(HybridRagSearchRequest request);
+
+    /**
+     * Đồng bộ toàn bộ sản phẩm trong hệ thống lên Hybrid RAG
+     * Lấy tất cả sản phẩm và các phiên bản của chúng để đồng bộ
+     */
+    void syncAllProducts();
 }
 

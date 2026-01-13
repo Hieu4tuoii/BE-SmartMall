@@ -2,6 +2,7 @@ package vn.hieu4tuoi.service;
 
 import java.util.List;
 
+import vn.hieu4tuoi.dto.request.user.CustomerUpdateRequest;
 import vn.hieu4tuoi.dto.request.user.EmployeeRequest;
 import vn.hieu4tuoi.dto.respone.PageResponse;
 import vn.hieu4tuoi.dto.respone.user.UserResponse;
@@ -20,4 +21,10 @@ public interface UserService {
    UserResponse getEmployeeById(String id);
    //cập nhật thông tin nhân viên
    void updateEmployee(String id, EmployeeRequest request);
+
+   // Lấy thông tin tài khoản khách hàng hiện tại
+   UserResponse getCurrentCustomer();
+
+   // Cập nhật thông tin tài khoản khách hàng hiện tại
+   void updateCurrentCustomer(CustomerUpdateRequest request);
 }

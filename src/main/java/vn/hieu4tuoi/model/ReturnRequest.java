@@ -28,4 +28,13 @@ public class ReturnRequest extends AbstractEntity {
 
     @Column(name = "address", length = 500)
     private String address;
+
+    @Column(name = "image_url", columnDefinition = "TEXT")
+    private String imageUrl;
+
+    @Column(name = "account_number", length = 50)
+    private String accountNumber;
+
+    @Column(name = "bank_name", length = 200)
+    private String bankName;
 }

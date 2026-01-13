@@ -34,18 +34,19 @@ import vn.hieu4tuoi.dto.respone.chat.AIResponse;
 import vn.hieu4tuoi.dto.respone.hybrid.HybridRagSearchResponse;
 import vn.hieu4tuoi.common.PaymentMethod;
 import vn.hieu4tuoi.dto.respone.order.OrderByAIResponse;
+import vn.hieu4tuoi.dto.respone.user.UserResponse;
 import vn.hieu4tuoi.exception.ResourceNotFoundException;
 import vn.hieu4tuoi.exception.UnauthorizedException;
 import vn.hieu4tuoi.model.ChatHistory;
 import vn.hieu4tuoi.model.Function;
 import vn.hieu4tuoi.model.ToolCall;
 import vn.hieu4tuoi.repository.ChatHistoryRepository;
-import vn.hieu4tuoi.repository.UserRepository;
 import vn.hieu4tuoi.service.BankService;
 import vn.hieu4tuoi.service.ChatHistoryService;
 import vn.hieu4tuoi.service.HybridRagService;
 import vn.hieu4tuoi.service.OrderService;
 import vn.hieu4tuoi.service.ProductService;
+import vn.hieu4tuoi.service.UserService;
 
 @Service
 @RequiredArgsConstructor
@@ -58,7 +59,7 @@ public class ChatbotServiceImpl {
     private final ObjectMapper objectMapper;
     private final RestTemplate restTemplate;
     private final ProductService productService;
-    private final UserRepository userRepository;
+    private final UserService userService;
     private final ChatHistoryService chatHistoryService;
     private final ChatHistoryRepository chatHistoryRepository;
     private final OpenAIToolProvider toolListProvider;
@@ -85,15 +86,23 @@ public class ChatbotServiceImpl {
         }
         String userId = user.getId();
 
-        String systemPrompt = """
-                        Bạn là một trợ lý chatbot dành cho website bán đồ công nghệ SmartMall, (chỉ đồ mới gồm: điện thoại, tablet, tai nghe, smartwatch). Chỉ trả lời các thông tin liên quan đến sản phẩm.
+        // Lấy thông tin user từ userService để lấy số điện thoại và địa chỉ
+        UserResponse userResponse = userService.getCurrentCustomer();
+        String phoneNumber = userResponse.getPhoneNumber() != null && !userResponse.getPhoneNumber().isEmpty() 
+                ? userResponse.getPhoneNumber() : "0348921209";
+        String address = userResponse.getAddress() != null && !userResponse.getAddress().isEmpty() 
+                ? userResponse.getAddress() : "267 giáp bát, Hà Nội";
 
-                Output Verbosity: Giới hạn độ dài câu trả lời tối đa 2 đoạn ngắn hoặc 4 ý gạch đầu dòng, mỗi ý không quá 1 dòng.  Ưu tiên trả lời ngắn gọn nhưng đầy đủ, rõ ràng và dễ hiểu trong phạm vi độ dài đã nêu. Nếu khách hỏi nhiều ý, hãy đảm bảo trả lời trọn vẹn các ý trong giới hạn này.
+        String systemPrompt = String.format("""
+                        Bạn là một trợ lý chatbot dành cho website bán đồ công nghệ SmartMall, (chỉ đồ mới gồm: điện thoại, tablet, tai nghe, đồng hồ, máy ảnh). Chỉ trả lời các thông tin liên quan đến sản phẩm của cửa hàng.
 
-                Một số lưu ý cho từng hàm:
-                - Hàm Product_Consulting: message là tin nhắn tư vấn sẽ được gửi trực tiếp đến khách hàng, tư vấn ngắn gọn, rõ ràng, dễ hiểu dựa trên dữ liệu sản phẩm từ hàm Search_Product và từ nhu cầu của khách hàng.
-                - Hàm Order: không được hỏi số lượng sản phẩm. BẮT BUỘC follow theo quy trình sau: Hỏi màu sắc, số điện thoại, địa chỉ, ghi chú ( nếu có, chỉ hỏi 1 lần ) -> Sau khi có đầy đủ thông tin thì gửi lại thông tin đơn hàng và hỏi phương thức thanh toán để xác nhận đơn hàng-> Sau đó gọi hàm order.
-                        """;
+                Output Verbosity: Giới hạn độ dài câu trả lời tối đa 2 đoạn ngắn hoặc 6 ý gạch đầu dòng, mỗi ý không quá 1 dòng.  Ưu tiên trả lời ngắn gọn nhưng đầy đủ, rõ ràng và dễ hiểu trong phạm vi độ dài đã nêu. Nếu khách hỏi nhiều ý, hãy đảm bảo trả lời trọn vẹn các ý trong giới hạn này.
+
+                Một số lưu ý quan trọng:
+                 - Khi đưa ra thông tin về sản phẩm, bắt buộc phải gọi hàm Product_Consulting để tôi có thể trích xuất id, không được đưa ra tin nhắn tư vấn trực tiếp
+                - Hàm Product_Consulting:  Tham số message là tin nhắn tư vấn sẽ được gửi trực tiếp đến khách hàng, tư vấn ngắn gọn, rõ ràng, dễ hiểu dựa trên dữ liệu sản phẩm từ hàm Search_Product và từ nhu cầu của khách hàng.
+                - Hàm Order: không được hỏi số lượng sản phẩm. BẮT BUỘC follow theo quy trình sau: Hỏi màu sắc, số điện thoại (mặc định %s theo tài khoản) , địa chỉ (mặc định %s theo tài khoản), ghi chú ( nếu có, chỉ hỏi 1 lần ) -> Sau khi có đầy đủ thông tin thì gửi lại thông tin đơn hàng và hỏi phương thức thanh toán để xác nhận đơn hàng-> Sau đó gọi hàm order.
+                        """, phoneNumber, address);
 
         // lay ds lich su chat trong ngay cua customer
         List<ChatbotRequest.Message> chatHistories = chatHistoryService.getRecentChatHistoies(userId).stream().map(
@@ -257,9 +266,11 @@ public class ChatbotServiceImpl {
                                     // Kiểm tra nếu là thanh toán chuyển khoản
                                     if (orderResponse.getPaymentMethod() == PaymentMethod.BANK_TRANSFER) {
                                         // Tạo QR code cho thanh toán
+                                        // Giảm số tiền xuống 1000 lần để dễ test
+                                        Long reducedAmount = orderResponse.getTotalPrice() / 1000;
                                         String qrCodeUrl = String.format(
                                                 "https://qr.sepay.vn/img?acc=%s&bank=%s&amount=%s&des=%s&template=qronly&download=DOWNLOAD",
-                                                accountNumber, bank, orderResponse.getTotalPrice(),
+                                                accountNumber, bank, reducedAmount,
                                                 orderResponse.getOrderId());
 
                                         // Thêm thông tin QR code vào response
@@ -277,7 +288,7 @@ public class ChatbotServiceImpl {
                                         chatRequest.setToolCalls(null);
                                         chatRequest.setHidden(false);
                                         chatHistoryService.saveAndFlush(chatRequest);
-                                        
+
                                         ChatRequest chatRequest2 = new ChatRequest();
                                         chatRequest2.setContent(qrCodeUrl);
                                         chatRequest2.setRole(RoleChat.qr_code);

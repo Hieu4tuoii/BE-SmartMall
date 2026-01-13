@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import vn.hieu4tuoi.dto.request.user.CustomerUpdateRequest;
 import vn.hieu4tuoi.dto.request.user.EmployeeRequest;
 import vn.hieu4tuoi.dto.respone.ResponseData;
 import vn.hieu4tuoi.service.UserService;
@@ -31,6 +32,13 @@ public class UserController {
             @RequestParam(defaultValue = "10") int size) {
         return new ResponseData<>(HttpStatus.OK.value(), "Lấy danh sách khách hàng thành công",
                 userService.getCustomerList(keyword, sort, page, size));
+    }
+
+    @GetMapping("/customer/current-user")
+    @Operation(summary = "Lấy thông tin tài khoản khách hàng hiện tại")
+    public ResponseData<?> getCurrentCustomer() {
+        return new ResponseData<>(HttpStatus.OK.value(), "Lấy thông tin tài khoản khách hàng thành công",
+                userService.getCurrentCustomer());
     }
 
     @GetMapping("/employee")
@@ -69,5 +77,12 @@ public class UserController {
     public ResponseData<?> updateEmployee(@PathVariable String id, @RequestBody EmployeeRequest request) {
         userService.updateEmployee(id, request);
         return new ResponseData<>(HttpStatus.OK.value(), "Cập nhật thông tin nhân viên thành công");
+    }
+
+    @PutMapping("/customer/current-user")
+    @Operation(summary = "Cập nhật thông tin tài khoản khách hàng hiện tại")
+    public ResponseData<?> updateCurrentCustomer(@RequestBody CustomerUpdateRequest request) {
+        userService.updateCurrentCustomer(request);
+        return new ResponseData<>(HttpStatus.OK.value(), "Cập nhật thông tin tài khoản khách hàng thành công");
     }
 }
